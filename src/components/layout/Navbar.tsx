@@ -10,7 +10,6 @@ export default function Navbar() {
     const router = useRouter();
     const pathname = usePathname();
     const [user, setUser] = useState<User | null>(null);
-    const [theme, setTheme] = useState('light');
 
     useEffect(() => {
         // Vérifier si l'utilisateur est connecté
@@ -21,7 +20,6 @@ export default function Navbar() {
 
         // Récupérer le thème
         const storedTheme = localStorage.getItem('theme') || 'light';
-        setTheme(storedTheme);
         document.documentElement.setAttribute('data-theme', storedTheme);
     }, [pathname]);
 
