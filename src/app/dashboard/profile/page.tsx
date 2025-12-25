@@ -158,7 +158,7 @@ export default function ProfilePage() {
 
                                             <div className="form-control">
                                                 <label className="label">
-                                                    <span className="label-text">Nom d'utilisateur</span>
+                                                    <span className="label-text">Nom d&apos;utilisateur</span>
                                                 </label>
                                                 <input
                                                     type="text"
@@ -210,7 +210,7 @@ export default function ProfilePage() {
                                             </div>
 
                                             <div>
-                                                <p className="text-sm opacity-70">Nom d'utilisateur</p>
+                                                <p className="text-sm opacity-70">Nom d&apos;utilisateur</p>
                                                 <p className="font-semibold">@{user.username}</p>
                                             </div>
                                         </div>

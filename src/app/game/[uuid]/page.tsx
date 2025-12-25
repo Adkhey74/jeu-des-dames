@@ -47,10 +47,10 @@ export default function GamePage() {
   const uuid = params.uuid as string;
 
   const [user, setUser] = useState<User | null>(null);
-  const [playerColor, setPlayerColor] = useState<PlayerColor>('white');
+  const [playerColor] = useState<PlayerColor>('white');
   const [currentTurn, setCurrentTurn] = useState<PlayerColor>('white');
   const [pieces, setPieces] = useState<Piece[]>(initializeBoard());
-  const [opponent, setOpponent] = useState<User | null>(null);
+  const [opponent] = useState<User | null>(null);
   const [gameStatus, setGameStatus] = useState<'waiting' | 'playing' | 'finished'>('waiting');
   const [winner, setWinner] = useState<PlayerColor | null>(null);
   const [moveHistory, setMoveHistory] = useState<Move[]>([]);
@@ -216,7 +216,7 @@ export default function GamePage() {
                             </svg>
                           </div>
                           <div>
-                            <p className="font-bold text-primary text-xl">En attente d'un adversaire...</p>
+                            <p className="font-bold text-primary text-xl">En attente d&apos;un adversaire...</p>
                             <button onClick={handleCopyCode} className="btn btn-primary btn-sm mt-2 shadow-lg">
                               Copier le code: {uuid.substring(0, 8)}
                             </button>

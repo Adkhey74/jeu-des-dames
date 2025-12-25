@@ -58,7 +58,7 @@ export default function Home() {
                     <span className="text-3xl">🏆</span>
                   </div>
                   <h3 className="card-title text-cyan-700">Suivre vos scores</h3>
-                  <p className="text-slate-600">Consultez l'historique de vos parties et vos statistiques</p>
+                  <p className="text-slate-600">Consultez l&apos;historique de vos parties et vos statistiques</p>
                 </div>
               </div>
             </div>

@@ -116,7 +116,7 @@ export default function LoginForm() {
                 <p className="text-center text-sm">
                     Pas encore de compte ?{' '}
                     <Link href="/register" className="link link-primary">
-                        S'inscrire
+                        S&apos;inscrire
                     </Link>
                 </p>
             </div>

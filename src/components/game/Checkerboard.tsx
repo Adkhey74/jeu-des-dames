@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Piece, Position, Move, PlayerColor } from '@/types';
 
 interface CheckerboardProps {

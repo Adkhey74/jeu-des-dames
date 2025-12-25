@@ -37,6 +37,7 @@ export default function RegisterForm() {
         }
 
         try {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { confirmPassword, ...registerData } = formData;
 
             const response = await fetch('/api/auth/register', {
@@ -155,7 +156,7 @@ export default function RegisterForm() {
 
                     <div className="form-control">
                         <label className="label">
-                            <span className="label-text text-slate-700 font-semibold">Nom d'utilisateur</span>
+                            <span className="label-text text-slate-700 font-semibold">Nom d&apos;utilisateur</span>
                         </label>
                         <input
                             type="text"

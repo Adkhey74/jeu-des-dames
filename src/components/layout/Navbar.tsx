@@ -32,13 +32,6 @@ export default function Navbar() {
         router.push('/');
     };
 
-    const toggleTheme = () => {
-        const newTheme = theme === 'light' ? 'dark' : 'light';
-        setTheme(newTheme);
-        localStorage.setItem('theme', newTheme);
-        document.documentElement.setAttribute('data-theme', newTheme);
-    };
-
     return (
         <div className="navbar bg-slate-900 text-white shadow-lg">
             <div className="navbar-start">
