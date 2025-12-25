@@ -90,7 +90,7 @@ export interface PlayerStats {
 // Types pour les WebSockets
 export interface SocketMessage {
   type: 'move' | 'join' | 'leave' | 'chat' | 'game_over';
-  payload: any;
+  payload: unknown;
 }
 
 export interface GameState {
