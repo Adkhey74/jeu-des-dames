@@ -1,0 +1,84 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String   @id @default(uuid())
+  nom               String
+  prenom            String
+  email             String   @unique
+  username          String   @unique
+  password          String
+  isVerified        Boolean  @default(false)
+  verificationToken String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  gamesAsWhite Game[]        @relation("WhitePlayer")
+  gamesAsBlack Game[]        @relation("BlackPlayer")
+  stats        PlayerStats?
+  history      GameHistory[]
+
+  @@map("users")
+}
+
+model Game {
+  id             String     @id @default(uuid())
+  uuid           String     @unique
+  status         String     @default("waiting") // waiting, playing, finished
+  whitePlayerId  String
+  blackPlayerId  String?
+  currentTurn    String     @default("white") // white, black
+  pieces         Json // Stockage JSON des pièces
+  moves          Json       @default("[]") // Historique des coups
+  winner         String? // white, black
+  createdAt      DateTime   @default(now())
+  startedAt      DateTime?
+  finishedAt     DateTime?
+
+  // Relations
+  whitePlayer User         @relation("WhitePlayer", fields: [whitePlayerId], references: [id])
+  blackPlayer User?        @relation("BlackPlayer", fields: [blackPlayerId], references: [id])
+  history     GameHistory?
+
+  @@map("games")
+}
+
+model GameHistory {
+  id               String   @id @default(uuid())
+  gameId           String   @unique
+  winnerId         String
+  whitePlayerScore Int      @default(0)
+  blackPlayerScore Int      @default(0)
+  duration         Int // en secondes
+  finishedAt       DateTime @default(now())
+
+  // Relations
+  game   Game @relation(fields: [gameId], references: [id])
+  winner User @relation(fields: [winnerId], references: [id])
+
+  @@map("game_history")
+}
+
+model PlayerStats {
+  id          String @id @default(uuid())
+  userId      String @unique
+  gamesPlayed Int    @default(0)
+  gamesWon    Int    @default(0)
+  gamesLost   Int    @default(0)
+  totalScore  Int    @default(0)
+
+  // Relations
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("player_stats")
+}
