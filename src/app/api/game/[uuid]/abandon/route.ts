@@ -29,7 +29,7 @@ export async function POST(
         }
 
         const { uuid: uuidParam } = await params;
-        let uuid = uuidParam.trim().toLowerCase();
+        const uuid = uuidParam.trim().toLowerCase();
 
         // Trouver la partie
         const game = await prisma.game.findUnique({

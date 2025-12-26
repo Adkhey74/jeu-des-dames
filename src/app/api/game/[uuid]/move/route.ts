@@ -29,7 +29,7 @@ export async function POST(
         }
 
         const { uuid: uuidParam } = await params;
-        let uuid = uuidParam.trim().toLowerCase();
+        const uuid = uuidParam.trim().toLowerCase();
 
         // Récupérer le coup depuis le body
         const body = await request.json();
