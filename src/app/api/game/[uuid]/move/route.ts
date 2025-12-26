@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 import { Piece, Move } from '@/types';
+import { Prisma } from '@prisma/client';
 
 export async function POST(
     request: NextRequest,
@@ -108,8 +109,8 @@ export async function POST(
         const updatedGame = await prisma.game.update({
             where: { id: game.id },
             data: {
-                pieces: pieces as unknown as any,
-                moves: moves as unknown as any,
+                pieces: pieces as unknown as Prisma.InputJsonValue,
+                moves: moves as unknown as Prisma.InputJsonValue,
                 currentTurn: nextTurn,
                 status: newStatus,
                 winner,

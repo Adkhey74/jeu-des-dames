@@ -4,6 +4,7 @@ import { verifyToken } from '@/lib/auth';
 import { randomUUID } from 'crypto';
 
 import { Piece } from '@/types';
+import { Prisma } from '@prisma/client';
 
 // Fonction pour initialiser le plateau
 function initializeBoard(): Piece[] {
@@ -87,7 +88,7 @@ export async function POST(request: NextRequest) {
                 status: 'waiting',
                 whitePlayerId: user.id,
                 currentTurn: 'white',
-                pieces: pieces as unknown as any,
+                pieces: pieces as unknown as Prisma.InputJsonValue,
                 moves: [],
             },
         });
