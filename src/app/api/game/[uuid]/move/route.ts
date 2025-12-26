@@ -108,8 +108,8 @@ export async function POST(
         const updatedGame = await prisma.game.update({
             where: { id: game.id },
             data: {
-                pieces: pieces as Piece[],
-                moves: moves as Move[],
+                pieces: pieces as unknown as any,
+                moves: moves as unknown as any,
                 currentTurn: nextTurn,
                 status: newStatus,
                 winner,

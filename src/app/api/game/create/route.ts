@@ -87,7 +87,7 @@ export async function POST(request: NextRequest) {
                 status: 'waiting',
                 whitePlayerId: user.id,
                 currentTurn: 'white',
-                pieces: pieces as Piece[],
+                pieces: pieces as unknown as any,
                 moves: [],
             },
         });
