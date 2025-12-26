@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
                 duration: duration || (game.startedAt && game.finishedAt 
                     ? Math.floor((game.finishedAt.getTime() - game.startedAt.getTime()) / 1000)
                     : 0),
-                finishedAt: game.finishedAt || game.updatedAt,
+                finishedAt: game.finishedAt || game.createdAt,
             };
         });
 
