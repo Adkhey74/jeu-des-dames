@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
         const token = authHeader.substring(7);
         try {
             verifyToken(token);
-        } catch (error) {
+        } catch {
             return NextResponse.json(
                 { error: 'Token invalide' },
                 { status: 401 }

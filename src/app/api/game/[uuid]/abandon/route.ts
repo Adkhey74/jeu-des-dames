@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import { Piece } from '@/types';
 
 export async function POST(
     request: NextRequest,
@@ -20,7 +21,7 @@ export async function POST(
         let payload;
         try {
             payload = verifyToken(token);
-        } catch (error) {
+        } catch {
             return NextResponse.json(
                 { error: 'Token invalide' },
                 { status: 401 }
@@ -135,9 +136,9 @@ export async function POST(
             const duration = Math.floor((finishedAt.getTime() - startedAt.getTime()) / 1000);
 
             // Calculer les scores finaux
-            const pieces = game.pieces as any[];
-            const whitePieces = pieces?.filter((p: any) => p.color === 'white').length || 0;
-            const blackPieces = pieces?.filter((p: any) => p.color === 'black').length || 0;
+            const pieces = game.pieces as Piece[];
+            const whitePieces = pieces?.filter((p: Piece) => p.color === 'white').length || 0;
+            const blackPieces = pieces?.filter((p: Piece) => p.color === 'black').length || 0;
 
             await prisma.gameHistory.create({
                 data: {

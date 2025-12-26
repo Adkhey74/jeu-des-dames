@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import Checkerboard from '@/components/game/Checkerboard';
@@ -144,7 +144,7 @@ export default function GamePage() {
   }, [uuid, router]);
 
   // Fonction pour recharger l'état de la partie
-  const loadGameState = async () => {
+  const loadGameState = useCallback(async () => {
     const token = localStorage.getItem('token');
     if (!token || !playerColor) return;
 
@@ -213,7 +213,7 @@ export default function GamePage() {
     } catch (err) {
       console.error('Erreur chargement état:', err);
     }
-  };
+  }, [uuid, playerColor]);
 
   // Polling pour vérifier les mises à jour de la partie
   useEffect(() => {
@@ -230,7 +230,7 @@ export default function GamePage() {
     return () => {
       clearInterval(pollInterval);
     };
-  }, [uuid, playerColor]);
+  }, [uuid, playerColor, loadGameState]);
 
   const handleMove = async (move: Move) => {
     if (!playerColor || !user) return;

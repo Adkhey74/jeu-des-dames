@@ -21,7 +21,7 @@ export async function POST(
         let payload;
         try {
             payload = verifyToken(token);
-        } catch (error) {
+        } catch {
             return NextResponse.json(
                 { error: 'Token invalide' },
                 { status: 401 }
@@ -108,8 +108,8 @@ export async function POST(
         const updatedGame = await prisma.game.update({
             where: { id: game.id },
             data: {
-                pieces: pieces as any,
-                moves: moves as any,
+                pieces: pieces as Piece[],
+                moves: moves as Move[],
                 currentTurn: nextTurn,
                 status: newStatus,
                 winner,

@@ -3,9 +3,11 @@ import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
 import { randomUUID } from 'crypto';
 
+import { Piece } from '@/types';
+
 // Fonction pour initialiser le plateau
-function initializeBoard() {
-    const pieces: any[] = [];
+function initializeBoard(): Piece[] {
+    const pieces: Piece[] = [];
 
     // Pièces blanches (en bas, lignes 5-7)
     for (let row = 5; row < 8; row++) {
@@ -53,7 +55,7 @@ export async function POST(request: NextRequest) {
         let payload;
         try {
             payload = verifyToken(token);
-        } catch (error) {
+        } catch {
             return NextResponse.json(
                 { error: 'Token invalide' },
                 { status: 401 }
@@ -85,7 +87,7 @@ export async function POST(request: NextRequest) {
                 status: 'waiting',
                 whitePlayerId: user.id,
                 currentTurn: 'white',
-                pieces: pieces as any,
+                pieces: pieces as Piece[],
                 moves: [],
             },
         });

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import { User } from '@/types';
@@ -44,7 +44,7 @@ export default function ScoresPage() {
     const [userStats, setUserStats] = useState<UserStats | null>(null);
     const [loading, setLoading] = useState(true);
 
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         const storedUser = localStorage.getItem('user');
         const token = localStorage.getItem('token');
         
@@ -97,11 +97,11 @@ export default function ScoresPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [router]);
 
     useEffect(() => {
         loadData();
-    }, [router]);
+    }, [loadData]);
 
     // Recharger les données quand la page redevient visible (après une partie)
     useEffect(() => {
@@ -122,7 +122,7 @@ export default function ScoresPage() {
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             window.removeEventListener('focus', handleFocus);
         };
-    }, []);
+    }, [loadData]);
 
     const formatDuration = (seconds: number) => {
         const mins = Math.floor(seconds / 60);

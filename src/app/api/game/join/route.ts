@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
         let payload;
         try {
             payload = verifyToken(token);
-        } catch (error) {
+        } catch {
             return NextResponse.json(
                 { error: 'Token invalide' },
                 { status: 401 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { verifyToken } from '@/lib/auth';
+import { Piece } from '@/types';
 
 export async function GET(request: NextRequest) {
     try {
@@ -17,7 +18,7 @@ export async function GET(request: NextRequest) {
         let payload;
         try {
             payload = verifyToken(token);
-        } catch (error) {
+        } catch {
             return NextResponse.json(
                 { error: 'Token invalide' },
                 { status: 401 }
@@ -73,9 +74,9 @@ export async function GET(request: NextRequest) {
             let calculatedBlackScore = blackPlayerScore;
 
             if (!game.history && game.pieces) {
-                const pieces = game.pieces as any[];
-                calculatedWhiteScore = pieces.filter((p: any) => p.color === 'white').length;
-                calculatedBlackScore = pieces.filter((p: any) => p.color === 'black').length;
+                const pieces = game.pieces as Piece[];
+                calculatedWhiteScore = pieces.filter((p: Piece) => p.color === 'white').length;
+                calculatedBlackScore = pieces.filter((p: Piece) => p.color === 'black').length;
             }
 
             return {
