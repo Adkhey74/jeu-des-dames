@@ -123,6 +123,14 @@ export async function POST(
             const winnerId = winner === 'white' ? game.whitePlayerId : game.blackPlayerId;
             const loserId = winner === 'white' ? game.blackPlayerId : game.whitePlayerId;
 
+            // Vérifier que winnerId n'est pas null
+            if (!winnerId) {
+                return NextResponse.json(
+                    { error: 'ID du gagnant manquant' },
+                    { status: 400 }
+                );
+            }
+
             // Calculer les scores
             const winnerPieces = whitePieces.length > 0 ? whitePieces.length : blackPieces.length;
             const loserPieces = winner === 'white' ? blackPieces.length : whitePieces.length;
