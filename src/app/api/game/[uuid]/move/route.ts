@@ -5,7 +5,7 @@ import { Piece, Move } from '@/types';
 
 export async function POST(
     request: NextRequest,
-    { params }: { params: { uuid: string } }
+    { params }: { params: Promise<{ uuid: string }> }
 ) {
     try {
         // Vérifier l'authentification
@@ -28,8 +28,8 @@ export async function POST(
             );
         }
 
-        let { uuid } = params;
-        uuid = uuid.trim().toLowerCase();
+        const { uuid: uuidParam } = await params;
+        let uuid = uuidParam.trim().toLowerCase();
 
         // Récupérer le coup depuis le body
         const body = await request.json();

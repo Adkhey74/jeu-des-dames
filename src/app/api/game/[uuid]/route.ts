@@ -4,7 +4,7 @@ import { verifyToken } from '@/lib/auth';
 
 export async function GET(
     request: NextRequest,
-    { params }: { params: { uuid: string } }
+    { params }: { params: Promise<{ uuid: string }> }
 ) {
     try {
         // Vérifier l'authentification
@@ -27,10 +27,10 @@ export async function GET(
             );
         }
 
-        let { uuid } = params;
+        const { uuid: uuidParam } = await params;
 
         // Normaliser l'UUID : trim et convertir en minuscules
-        uuid = uuid.trim().toLowerCase();
+        const uuid = uuidParam.trim().toLowerCase();
 
         // Trouver la partie
         const game = await prisma.game.findUnique({
