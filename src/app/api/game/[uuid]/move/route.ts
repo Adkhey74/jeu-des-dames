@@ -83,7 +83,7 @@ export async function POST(
         }
 
         // Ajouter le coup à l'historique
-        const moves = (game.moves as Move[]) || [];
+        const moves = ((game.moves as unknown) as Move[]) || [];
         moves.push(move as Move);
 
         // Déterminer le prochain tour

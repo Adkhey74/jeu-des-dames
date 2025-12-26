@@ -74,7 +74,7 @@ export async function GET(request: NextRequest) {
             let calculatedBlackScore = blackPlayerScore;
 
             if (!game.history && game.pieces) {
-                const pieces = game.pieces as Piece[];
+                const pieces = (game.pieces as unknown) as Piece[];
                 calculatedWhiteScore = pieces.filter((p: Piece) => p.color === 'white').length;
                 calculatedBlackScore = pieces.filter((p: Piece) => p.color === 'black').length;
             }

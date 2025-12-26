@@ -136,7 +136,7 @@ export async function POST(
             const duration = Math.floor((finishedAt.getTime() - startedAt.getTime()) / 1000);
 
             // Calculer les scores finaux
-            const pieces = game.pieces as Piece[];
+            const pieces = (game.pieces as unknown) as Piece[];
             const whitePieces = pieces?.filter((p: Piece) => p.color === 'white').length || 0;
             const blackPieces = pieces?.filter((p: Piece) => p.color === 'black').length || 0;
 
