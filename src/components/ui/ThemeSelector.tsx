@@ -46,19 +46,20 @@ export default function ThemeSelector() {
     const currentThemeData = THEMES.find(t => t.name === currentTheme) || THEMES[0];
 
     return (
-        <div className="dropdown dropdown-end">
+        <div className="dropdown dropdown-top lg:dropdown-top">
             <div
                 tabIndex={0}
                 role="button"
-                className="btn btn-ghost btn-circle"
+                className="btn btn-ghost w-full justify-start lg:justify-center"
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <span className="text-xl">{currentThemeData.icon}</span>
+                <span className="hidden lg:inline ml-2 text-sm">{currentThemeData.label}</span>
             </div>
             {isOpen && (
                 <ul
                     tabIndex={0}
-                    className="dropdown-content z-[1] p-2 shadow-2xl bg-base-300 rounded-box w-52 max-h-96 overflow-y-auto"
+                    className="dropdown-content mb-2 z-[1] p-2 shadow-2xl bg-base-300 rounded-box w-52 max-h-96 overflow-y-auto"
                 >
                     <li className="menu-title">
                         <span>Choisir un thème</span>

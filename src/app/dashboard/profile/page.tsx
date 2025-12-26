@@ -50,7 +50,7 @@ export default function ProfilePage() {
         return (
             <>
                 <Navbar />
-                <div className="min-h-screen flex items-center justify-center">
+                <div className="min-h-screen ml-20 lg:ml-64 flex items-center justify-center">
                     <span className="loading loading-spinner loading-lg"></span>
                 </div>
             </>
@@ -59,19 +59,24 @@ export default function ProfilePage() {
 
     return (
         <>
-            <Navbar />
-            <main className="min-h-screen p-4 lg:p-8 bg-gradient-to-br from-slate-100 via-blue-50 to-slate-200">
-                <div className="max-w-4xl mx-auto">
-                    <h1 className="text-4xl font-bold mb-8 text-slate-800">Mon Profil</h1>
+      <Navbar />
+      <main className="min-h-screen ml-20 lg:ml-64 p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-100">
+        <div className="w-full">
+                    <div className="mb-8">
+                        <h1 className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                            Mon Profil
+                        </h1>
+                        <p className="text-slate-600 text-lg">Gérez vos informations personnelles</p>
+                    </div>
 
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         {/* Carte Avatar */}
                         <div className="lg:col-span-1">
-                            <div className="card bg-white shadow-xl border-2 border-blue-300 hover:border-blue-500 transition-all">
-                                <div className="card-body items-center text-center">
+                            <div className="card bg-white shadow-xl border-2 border-indigo-200 hover:border-indigo-400 hover:shadow-2xl transition-all rounded-2xl overflow-hidden">
+                                <div className="card-body items-center text-center p-8">
                                     <div className="avatar placeholder mb-4">
-                                        <div className="bg-blue-800 text-white rounded-full w-32">
-                                            <span className="text-5xl">{user.prenom[0]}{user.nom[0]}</span>
+                                        <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-full w-32 h-32 flex items-center justify-center shadow-lg ring-4 ring-indigo-100">
+                                            <span className="text-5xl font-bold">{user.prenom[0]}{user.nom[0]}</span>
                                         </div>
                                     </div>
                                     <h2 className="card-title text-slate-800">{user.prenom} {user.nom}</h2>
@@ -96,7 +101,7 @@ export default function ProfilePage() {
 
                         {/* Informations du profil */}
                         <div className="lg:col-span-2">
-                            <div className="card bg-white shadow-xl border-2 border-slate-300 hover:border-slate-500 transition-all">
+                            <div className="card bg-white shadow-xl border-2 border-indigo-100 hover:border-indigo-300 hover:shadow-2xl transition-all rounded-2xl overflow-hidden">
                                 <div className="card-body">
                                     <div className="flex justify-between items-center mb-4">
                                         <h2 className="card-title text-slate-800">Informations personnelles</h2>

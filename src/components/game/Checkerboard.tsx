@@ -115,53 +115,85 @@ export default function Checkerboard({ pieces, currentTurn, playerColor, onMove 
         return (row + col) % 2 === 1;
     };
 
+    // Inverser le plateau pour le joueur noir (ses pièces doivent être en bas)
+    // Rotation de 180° : inverser les lignes ET les colonnes
+    const shouldFlip = playerColor === 'black';
+    
+    // Fonction pour convertir les coordonnées d'affichage en coordonnées logiques
+    const getLogicalRow = (displayRow: number): number => {
+        return shouldFlip ? 7 - displayRow : displayRow;
+    };
+    
+    // Fonction pour convertir les coordonnées d'affichage en coordonnées logiques
+    const getLogicalCol = (displayCol: number): number => {
+        return shouldFlip ? 7 - displayCol : displayCol;
+    };
+
     return (
-        <div className="flex flex-col items-center w-full">
+        <div className="flex flex-col items-center justify-center w-full h-full" style={{ minHeight: 0 }}>
             {/* Plateau de jeu élégant */}
-            <div className="relative w-full max-w-2xl aspect-square">
+            <div className="relative" style={{ 
+                width: '100%',
+                aspectRatio: '1 / 1',
+                minWidth: 0,
+                minHeight: 0,
+                maxWidth: '100%',
+                maxHeight: '100%'
+            }}>
                 {/* Bordure décorative */}
-                <div className="absolute inset-0 bg-gradient-to-br from-amber-800 to-amber-900 rounded-2xl shadow-2xl transform rotate-1"></div>
-                <div className="absolute inset-1 bg-gradient-to-br from-amber-700 to-amber-800 rounded-xl shadow-xl"></div>
+                <div className="absolute inset-0 bg-gradient-to-br from-amber-800 to-amber-900 rounded-xl shadow-xl transform rotate-1"></div>
+                <div className="absolute inset-0.5 bg-gradient-to-br from-amber-700 to-amber-800 rounded-lg shadow-lg"></div>
 
                 {/* Plateau principal */}
-                <div className="relative w-full h-full bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl shadow-inner p-4 border-2 border-amber-300/30">
+                <div className="relative w-full h-full bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg shadow-inner p-2 border border-amber-300/30">
                     <div className="grid grid-cols-8 grid-rows-8 gap-0 w-full h-full rounded-lg overflow-hidden shadow-lg">
-                        {Array.from({ length: 8 }, (_, row) =>
-                            Array.from({ length: 8 }, (_, col) => {
-                                const piece = getPieceAt(row, col);
-                                const dark = isDarkSquare(row, col);
-                                const selected = isSelected(row, col);
-                                const validMove = isValidMoveSquare(row, col);
+                        {Array.from({ length: 8 }, (_, displayRow) =>
+                            Array.from({ length: 8 }, (_, displayCol) => {
+                                // Convertir les coordonnées d'affichage en coordonnées logiques
+                                const logicalRow = getLogicalRow(displayRow);
+                                const logicalCol = getLogicalCol(displayCol);
+                                
+                                const piece = getPieceAt(logicalRow, logicalCol);
+                                const dark = isDarkSquare(logicalRow, logicalCol);
+                                const selected = isSelected(logicalRow, logicalCol);
+                                const validMove = isValidMoveSquare(logicalRow, logicalCol);
 
                                 return (
                                     <div
-                                        key={`${row}-${col}`}
-                                        onClick={() => handleSquareClick(row, col)}
+                                        key={`${displayRow}-${displayCol}`}
+                                        onClick={() => handleSquareClick(logicalRow, logicalCol)}
                                         className={`
                       w-full h-full flex items-center justify-center cursor-pointer transition-all duration-200 relative
                       ${dark
                                                 ? 'bg-gradient-to-br from-amber-700 to-amber-800 shadow-inner'
                                                 : 'bg-gradient-to-br from-amber-50 to-amber-100 shadow-sm'
                                             }
-                      ${selected ? 'ring-4 ring-primary shadow-lg scale-105' : ''}
-                      ${validMove ? 'ring-2 ring-secondary ring-opacity-80' : ''}
+                      ${selected ? 'ring-4 ring-indigo-500 shadow-xl scale-105 z-10' : ''}
+                      ${validMove ? 'ring-2 ring-purple-500 ring-opacity-80' : ''}
                       ${!isMyTurn ? 'cursor-not-allowed opacity-60' : ''}
                       hover:brightness-110 hover:scale-105
                     `}
+                                    style={{ aspectRatio: '1 / 1' }}
                                     >
                                         {piece && (
                                             <div className={`
-                        w-4/5 h-4/5 rounded-full flex items-center justify-center relative
+                        rounded-full flex items-center justify-center relative
                         ${piece.color === 'white'
                                                     ? 'bg-gradient-to-br from-white to-gray-50 border-2 border-gray-400 shadow-lg'
                                                     : 'bg-gradient-to-br from-gray-800 to-gray-900 border-2 border-gray-700 shadow-lg'
                                                 }
                         ${piece.type === 'king' ? 'ring-2 ring-yellow-400' : ''}
                         transform transition-all duration-200 hover:scale-110
-                      `}>
+                      `}
+                      style={{ 
+                        width: '65%',
+                        aspectRatio: '1 / 1',
+                        minWidth: 0,
+                        minHeight: 0
+                      }}>
                                                 {piece.type === 'king' && (
                                                     <span className={`
-                            text-2xl font-bold drop-shadow-lg
+                            text-base lg:text-lg font-bold drop-shadow-lg
                             ${piece.color === 'white' ? 'text-yellow-600' : 'text-yellow-300'}
                           `}>
                                                         ♔
@@ -172,7 +204,10 @@ export default function Checkerboard({ pieces, currentTurn, playerColor, onMove 
                                             </div>
                                         )}
                                         {validMove && !piece && (
-                                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-secondary to-secondary-focus opacity-70 shadow-lg animate-pulse"></div>
+                                            <div className="rounded-full bg-gradient-to-br from-purple-500 to-purple-600 opacity-70 shadow-lg animate-pulse ring-2 ring-purple-300" style={{ 
+                                                width: '30%',
+                                                aspectRatio: '1 / 1'
+                                            }}></div>
                                         )}
                                     </div>
                                 );
@@ -183,16 +218,23 @@ export default function Checkerboard({ pieces, currentTurn, playerColor, onMove 
             </div>
 
             {/* Indicateur de tour élégant */}
-            <div className="mt-8 text-center">
+            <div className="mt-1 text-center flex-shrink-0">
                 <div className={`
-          inline-flex items-center gap-3 px-6 py-3 rounded-full shadow-lg text-lg font-semibold
+          inline-flex items-center gap-1 px-2 py-1 rounded-md shadow-sm text-xs font-bold border transition-all duration-300
           ${isMyTurn
-                        ? 'bg-gradient-to-r from-secondary to-secondary-focus text-white'
-                        : 'bg-gradient-to-r from-primary to-primary-focus text-white'
+                        ? 'bg-gradient-to-r from-indigo-500 via-purple-600 to-indigo-600 text-white border-indigo-400 ring-1 ring-indigo-200/50 animate-pulse'
+                        : 'bg-gradient-to-r from-gray-400 to-gray-500 text-white border-gray-300'
                     }
         `}>
-                    <div className={`w-3 h-3 rounded-full ${isMyTurn ? 'bg-white animate-pulse' : 'bg-white'}`}></div>
-                    {isMyTurn ? "C'est votre tour" : "En attente de l'adversaire"}
+                    <div className={`w-1.5 h-1.5 rounded-full transition-all ${isMyTurn ? 'bg-white animate-pulse shadow-sm' : 'bg-white'}`}></div>
+                    <span className="drop-shadow-sm text-xs">
+                        {isMyTurn ? "🎯 Votre tour" : "⏳ Attente"}
+                    </span>
+                    {isMyTurn && (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-2 w-2 animate-bounce" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    )}
                 </div>
             </div>
         </div>
