@@ -41,6 +41,32 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Styles gaming modernes */
+.gaming-card {
+  background: linear-gradient(135deg, rgba(61, 37, 37, 0.9) 0%, rgba(74, 42, 42, 0.9) 100%);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  box-shadow: 0 10px 40px rgba(239, 68, 68, 0.1), 0 0 20px rgba(239, 68, 68, 0.05);
+  transition: all 0.3s ease;
+}
+
+.gaming-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 60px rgba(239, 68, 68, 0.15), 0 0 40px rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.gaming-sidebar {
+  background: linear-gradient(180deg, #1a0f0f 0%, #2d1818 100%);
+  border-right: 1px solid rgba(239, 68, 68, 0.1);
+}
+
+.gaming-header {
+  background: linear-gradient(135deg, rgba(45, 24, 24, 0.95) 0%, rgba(26, 15, 15, 0.95) 100%);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(239, 68, 68, 0.1);
+}
+
 /* Styles personnalisés pour le jeu de dames */
 .checkerboard {
   background-image: linear-gradient(45deg, #f0d9b5 25%, transparent 25%), linear-gradient(-45deg, #f0d9b5 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #f0d9b5 75%), linear-gradient(-45deg, transparent 75%, #f0d9b5 75%);

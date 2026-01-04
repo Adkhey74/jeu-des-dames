@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
+import Header from '@/components/layout/Header';
 import Checkerboard from '@/components/game/Checkerboard';
 import { Piece, Move, PlayerColor, User } from '@/types';
 
@@ -367,7 +368,8 @@ export default function GamePage() {
     return (
       <>
         <Navbar />
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-100">
+        <Header />
+        <div className="min-h-screen pt-16 lg:pt-20 flex items-center justify-center bg-gradient-gaming">
           <div className="text-center">
             <span className="loading loading-spinner loading-lg text-indigo-600"></span>
             <p className="mt-4 text-gray-600">Chargement de la partie...</p>
@@ -381,7 +383,8 @@ export default function GamePage() {
     return (
       <>
         <Navbar />
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-100">
+        <Header />
+        <div className="min-h-screen pt-16 lg:pt-20 flex items-center justify-center bg-gradient-gaming">
           <div className="card bg-white shadow-xl border-2 border-red-200 max-w-md">
             <div className="card-body text-center">
               <div className="alert alert-error">
@@ -407,7 +410,8 @@ export default function GamePage() {
     return (
       <>
         <Navbar />
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-100">
+        <Header />
+        <div className="min-h-screen pt-16 lg:pt-20 flex items-center justify-center bg-gradient-gaming">
           <div className="card bg-white shadow-xl border-2 border-indigo-200 max-w-md">
             <div className="card-body text-center">
               <p className="text-gray-600 mb-4">Vous n&apos;êtes pas autorisé à voir cette partie.</p>
@@ -427,7 +431,8 @@ export default function GamePage() {
   return (
     <>
       <Navbar />
-      <main className="h-screen overflow-hidden ml-20 lg:ml-64 pt-2 pb-2 pr-2 lg:pt-3 lg:pb-3 lg:pr-3 bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-100">
+      <Header />
+      <main className="h-screen overflow-hidden ml-20 lg:ml-64 pt-16 lg:pt-20 pb-2 pr-2 lg:pb-3 lg:pr-3 bg-gradient-gaming">
         <div className="h-full">
           <div className="grid grid-cols-1 xl:grid-cols-5 gap-3 h-full">
 

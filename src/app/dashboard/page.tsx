@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
+import Header from '@/components/layout/Header';
 import { User } from '@/types';
 
 interface UserStats {
@@ -182,8 +183,9 @@ export default function DashboardPage() {
         return (
             <>
                 <Navbar />
-                <div className="min-h-screen ml-20 lg:ml-64 flex items-center justify-center">
-                    <span className="loading loading-spinner loading-lg"></span>
+                <Header />
+                <div className="min-h-screen ml-20 lg:ml-64 pt-16 lg:pt-20 flex items-center justify-center bg-gradient-gaming">
+                    <span className="loading loading-spinner loading-lg text-red-500"></span>
                 </div>
             </>
         );
@@ -192,13 +194,14 @@ export default function DashboardPage() {
     return (
         <>
             <Navbar />
-            <main className="min-h-screen ml-20 lg:ml-64 p-4 lg:p-6 xl:p-8 bg-gradient-to-br from-indigo-50 via-purple-50 to-indigo-100">
+            <Header />
+            <main className="min-h-screen ml-20 lg:ml-64 pt-16 lg:pt-20 p-4 lg:p-6 xl:p-8 bg-gradient-gaming">
                 <div className="w-full">
                     <div className="mb-10">
-                        <h1 className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                        <h1 className="text-4xl md:text-5xl font-bold mb-2 bg-gradient-to-r from-red-400 via-red-500 to-orange-500 bg-clip-text text-transparent">
                             Bienvenue, {user.prenom} {user.nom} !
                         </h1>
-                        <p className="text-slate-600 text-lg">Gérez vos parties et suivez vos performances</p>
+                        <p className="text-white/70 text-lg">Gérez vos parties et suivez vos performances</p>
                     </div>
 
                     {error && (
@@ -212,48 +215,50 @@ export default function DashboardPage() {
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 xl:gap-8 mb-6 xl:mb-8">
                         {/* Créer une partie */}
-                        <div className="card bg-white shadow-xl border-2 border-indigo-200 hover:border-indigo-400 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-2xl overflow-hidden relative">
+                        <div className="gaming-card rounded-2xl overflow-hidden relative">
                             {creatingGame && (
-                                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm z-10 rounded-2xl flex flex-col items-center justify-center">
+                                <div className="absolute inset-0 bg-dark-card/95 backdrop-blur-sm z-10 rounded-2xl flex flex-col items-center justify-center">
                                     <div className="relative">
-                                        <div className="w-20 h-20 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
+                                        <div className="w-20 h-20 border-4 border-red-500/20 border-t-red-500 rounded-full animate-spin"></div>
                                         <div className="absolute inset-0 flex items-center justify-center">
                                             <span className="text-3xl">🎮</span>
                                         </div>
                                     </div>
-                                    <p className="mt-6 text-lg font-semibold text-indigo-700 animate-pulse">
+                                    <p className="mt-6 text-lg font-semibold text-white animate-pulse">
                                         Création de la partie...
                                     </p>
-                                    <p className="mt-2 text-sm text-gray-600">
+                                    <p className="mt-2 text-sm text-white/60">
                                         Veuillez patienter
                                     </p>
                                 </div>
                             )}
-                            <div className="card-body p-8">
+                            <div className="p-6 lg:p-8">
                                 <div className="flex items-center gap-4 mb-4">
-                                    <div className={`w-14 h-14 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow-lg transition-transform ${creatingGame ? 'animate-bounce' : ''}`}>
+                                    <div className={`w-14 h-14 rounded-xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-lg transition-transform ${creatingGame ? 'animate-bounce' : ''}`}>
                                         <span className="text-3xl">🎮</span>
                                     </div>
-                                    <h2 className="card-title text-2xl text-indigo-700">Créer une nouvelle partie</h2>
+                                    <h2 className="text-2xl font-bold text-white">Créer une nouvelle partie</h2>
                                 </div>
-                                <p className="mb-6 text-slate-700">
+                                <p className="mb-6 text-white/70">
                                     Créez une nouvelle partie et partagez le code avec un ami pour jouer ensemble.
                                 </p>
                                 {gameCode && !creatingGame && (
-                                    <div className="alert alert-success mb-4 animate-in fade-in slide-in-from-top-4 duration-500">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                        <div>
-                                            <span className="font-bold">Code de la partie :</span>
-                                            <div className="font-mono text-xl mt-2">{gameCode}</div>
+                                    <div className="mb-4 p-4 rounded-xl bg-green-500/20 border border-green-500/30 animate-in fade-in slide-in-from-top-4 duration-500">
+                                        <div className="flex items-center gap-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6 text-green-400" fill="none" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            <div>
+                                                <span className="font-bold text-white">Code de la partie :</span>
+                                                <div className="font-mono text-xl mt-2 text-white">{gameCode}</div>
+                                            </div>
                                         </div>
                                     </div>
                                 )}
-                                <div className="card-actions">
+                                <div>
                                     <button
                                         onClick={createGame}
-                                        className="btn btn-primary btn-lg w-full relative overflow-hidden group"
+                                        className="btn bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white border-0 btn-lg w-full relative overflow-hidden group shadow-lg shadow-red-500/30"
                                         disabled={creatingGame}
                                     >
                                         <span className={`flex items-center gap-2 transition-all ${creatingGame ? 'opacity-0' : 'opacity-100'}`}>
@@ -274,38 +279,38 @@ export default function DashboardPage() {
                         </div>
 
                         {/* Rejoindre une partie */}
-                        <div className="card bg-white shadow-xl border-2 border-purple-200 hover:border-purple-400 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 rounded-2xl overflow-hidden relative">
+                        <div className="gaming-card rounded-2xl overflow-hidden relative">
                             {joiningGame && (
-                                <div className="absolute inset-0 bg-white/90 backdrop-blur-sm z-10 rounded-2xl flex flex-col items-center justify-center">
+                                <div className="absolute inset-0 bg-dark-card/95 backdrop-blur-sm z-10 rounded-2xl flex flex-col items-center justify-center">
                                     <div className="relative">
-                                        <div className="w-20 h-20 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+                                        <div className="w-20 h-20 border-4 border-orange-500/20 border-t-orange-500 rounded-full animate-spin"></div>
                                         <div className="absolute inset-0 flex items-center justify-center">
                                             <span className="text-3xl">🔗</span>
                                         </div>
                                     </div>
-                                    <p className="mt-6 text-lg font-semibold text-purple-700 animate-pulse">
+                                    <p className="mt-6 text-lg font-semibold text-white animate-pulse">
                                         Connexion à la partie...
                                     </p>
-                                    <p className="mt-2 text-sm text-gray-600">
+                                    <p className="mt-2 text-sm text-white/60">
                                         Recherche en cours
                                     </p>
                                 </div>
                             )}
-                            <div className="card-body p-8">
+                            <div className="p-6 lg:p-8">
                                 <div className="flex items-center gap-4 mb-4">
-                                    <div className={`w-14 h-14 rounded-xl bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shadow-lg transition-transform ${joiningGame ? 'animate-bounce' : ''}`}>
+                                    <div className={`w-14 h-14 rounded-xl bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center shadow-lg transition-transform ${joiningGame ? 'animate-bounce' : ''}`}>
                                         <span className="text-3xl">🔗</span>
                                     </div>
-                                    <h2 className="card-title text-2xl text-purple-700">Rejoindre une partie</h2>
+                                    <h2 className="text-2xl font-bold text-white">Rejoindre une partie</h2>
                                 </div>
-                                <p className="mb-6 text-slate-700">
+                                <p className="mb-6 text-white/70">
                                     Entrez le code de la partie pour rejoindre un ami.
                                 </p>
                                 <div className="form-control mb-4">
                                     <input
                                         type="text"
                                         placeholder="Entrez le code de la partie"
-                                        className="input input-bordered input-lg w-full font-mono text-gray-900 placeholder:text-gray-400 bg-white disabled:opacity-50 disabled:cursor-not-allowed"
+                                        className="input input-lg w-full font-mono text-white placeholder:text-white/40 bg-white/5 border-white/10 focus:border-red-500/50 focus:outline-none focus:ring-2 focus:ring-red-500/50 disabled:opacity-50 disabled:cursor-not-allowed"
                                         value={joinCode}
                                         onChange={(e) => {
                                             // Permettre les tirets et normaliser
@@ -321,13 +326,13 @@ export default function DashboardPage() {
                                         disabled={joiningGame}
                                     />
                                     <label className="label">
-                                        <span className="label-text-alt text-gray-500">Collez le code complet de la partie</span>
+                                        <span className="label-text-alt text-white/50">Collez le code complet de la partie</span>
                                     </label>
                                 </div>
-                                <div className="card-actions">
+                                <div>
                                     <button
                                         onClick={joinGame}
-                                        className="btn btn-secondary btn-lg w-full relative overflow-hidden group"
+                                        className="btn bg-gradient-to-r from-orange-500 to-orange-700 hover:from-orange-600 hover:to-orange-800 text-white border-0 btn-lg w-full relative overflow-hidden group shadow-lg shadow-orange-500/30"
                                         disabled={joiningGame || !joinCode.trim()}
                                     >
                                         <span className={`flex items-center gap-2 transition-all ${joiningGame ? 'opacity-0' : 'opacity-100'}`}>
@@ -349,62 +354,62 @@ export default function DashboardPage() {
                     </div>
 
                     {/* Statistiques rapides */}
-                    <div className="stats bg-white shadow-xl border-2 border-indigo-100 w-full rounded-2xl overflow-hidden grid grid-cols-1 md:grid-cols-3 gap-0">
-                        <div className="stat border-r-2 border-indigo-100 p-4 lg:p-6">
-                            <div className="stat-figure text-indigo-600">
+                    <div className="gaming-card w-full rounded-2xl overflow-hidden grid grid-cols-1 md:grid-cols-3 gap-0">
+                        <div className="stat border-r border-white/10 p-4 lg:p-6">
+                            <div className="stat-figure text-red-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-8 h-8 stroke-current">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                                 </svg>
                             </div>
-                            <div className="stat-title text-slate-600 font-semibold">Parties jouées</div>
+                            <div className="stat-title text-white/70 font-semibold">Parties jouées</div>
                             {statsLoading ? (
-                                <div className="stat-value text-indigo-700">
+                                <div className="stat-value text-red-400">
                                     <span className="loading loading-spinner loading-sm"></span>
                                 </div>
                             ) : (
                                 <>
-                                    <div className="stat-value text-indigo-700">{stats?.gamesPlayed || 0}</div>
-                                    <div className="stat-desc text-slate-500">
+                                    <div className="stat-value text-red-400">{stats?.gamesPlayed || 0}</div>
+                                    <div className="stat-desc text-white/50">
                                         {stats && stats.gamesPlayed > 0 ? 'Au total' : 'Commencez à jouer !'}
                                     </div>
                                 </>
                             )}
                         </div>
 
-                        <div className="stat border-r-2 border-purple-100 p-4 lg:p-6">
-                            <div className="stat-figure text-purple-600">
+                        <div className="stat border-r border-white/10 p-4 lg:p-6">
+                            <div className="stat-figure text-orange-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-8 h-8 stroke-current">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
                                 </svg>
                             </div>
-                            <div className="stat-title text-slate-600 font-semibold">Victoires</div>
+                            <div className="stat-title text-white/70 font-semibold">Victoires</div>
                             {statsLoading ? (
-                                <div className="stat-value text-purple-700">
+                                <div className="stat-value text-orange-400">
                                     <span className="loading loading-spinner loading-sm"></span>
                                 </div>
                             ) : (
                                 <>
-                                    <div className="stat-value text-purple-700">{stats?.gamesWon || 0}</div>
-                                    <div className="stat-desc text-slate-500">{stats?.winRate || 0}%</div>
+                                    <div className="stat-value text-orange-400">{stats?.gamesWon || 0}</div>
+                                    <div className="stat-desc text-white/50">{stats?.winRate || 0}%</div>
                                 </>
                             )}
                         </div>
 
                         <div className="stat p-4 lg:p-6">
-                            <div className="stat-figure text-indigo-600">
+                            <div className="stat-figure text-red-400">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="inline-block w-8 h-8 stroke-current">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"></path>
                                 </svg>
                             </div>
-                            <div className="stat-title text-slate-600 font-semibold">Score total</div>
+                            <div className="stat-title text-white/70 font-semibold">Score total</div>
                             {statsLoading ? (
-                                <div className="stat-value text-indigo-700">
+                                <div className="stat-value text-red-400">
                                     <span className="loading loading-spinner loading-sm"></span>
                                 </div>
                             ) : (
                                 <>
-                                    <div className="stat-value text-indigo-700">{stats?.totalScore || 0}</div>
-                                    <div className="stat-desc text-slate-500">pts</div>
+                                    <div className="stat-value text-red-400">{stats?.totalScore || 0}</div>
+                                    <div className="stat-desc text-white/50">pts</div>
                                 </>
                             )}
                         </div>
