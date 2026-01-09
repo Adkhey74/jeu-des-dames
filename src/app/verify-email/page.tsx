@@ -1,13 +1,13 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
 import Navbar from '@/components/layout/Navbar';
 import Header from '@/components/layout/Header';
 import Link from 'next/link';
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
     const searchParams = useSearchParams();
     const router = useRouter();
     const { showToast } = useToast();
@@ -213,6 +213,34 @@ export default function VerifyEmailPage() {
                 </div>
             </main>
         </>
+    );
+}
+
+export default function VerifyEmailPage() {
+    return (
+        <Suspense fallback={
+            <>
+                <Navbar />
+                <Header />
+                <main className="min-h-screen ml-20 lg:ml-64 pt-16 lg:pt-20 p-4 lg:p-6 xl:p-8 bg-gradient-gaming">
+                    <div className="max-w-md mx-auto mt-20">
+                        <div className="card bg-white shadow-xl border-2 border-black">
+                            <div className="card-body text-center">
+                                <div className="flex justify-center mb-4">
+                                    <span className="loading loading-spinner loading-lg text-black"></span>
+                                </div>
+                                <h2 className="card-title justify-center text-2xl text-black mb-4">
+                                    Chargement...
+                                </h2>
+                                <p className="text-gray-600">Veuillez patienter</p>
+                            </div>
+                        </div>
+                    </div>
+                </main>
+            </>
+        }>
+            <VerifyEmailContent />
+        </Suspense>
     );
 }
 
