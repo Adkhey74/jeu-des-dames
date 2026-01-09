@@ -63,4 +63,3 @@ NEXT_PUBLIC_APP_URL=http://localhost:3000
 - Les emails de vérification expirent après 24 heures (gestion à implémenter si nécessaire)
 - Le token de vérification est supprimé après vérification réussie
 - Si l'envoi d'email échoue lors de l'inscription, l'utilisateur peut toujours demander un renvoi
-

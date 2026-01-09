@@ -42,16 +42,6 @@ function initializeBoard(): Piece[] {
 
   return pieces;
 }
-
-// Fonction pour convertir une position en notation algébrique (A-H, 1-8)
-function positionToAlgebraic(row: number, col: number): string {
-  // Colonnes : A-H (de gauche à droite, col 0 = A, col 7 = H)
-  // Lignes : 1-8 (de bas en haut pour les blancs, row 0 = ligne 8, row 7 = ligne 1)
-  const letter = String.fromCharCode(65 + col); // A=65, B=66, etc.
-  const number = 8 - row; // Inverser : row 0 = 8, row 7 = 1
-  return `${letter}${number}`;
-}
-
 export default function GamePage() {
   const params = useParams();
   const router = useRouter();
@@ -118,10 +108,6 @@ export default function GamePage() {
           
           if (data.game.moves && Array.isArray(data.game.moves)) {
             setMoveHistory(data.game.moves as Move[]);
-          }
-          
-          if (data.game.winner) {
-            setWinner(data.game.winner as PlayerColor);
           }
 
           // Déterminer l'adversaire
@@ -193,16 +179,15 @@ export default function GamePage() {
           }
           
           // Si la partie vient de se terminer
-            if (previousStatus === 'playing' && newStatus === 'finished' && data.game.winner) {
-              // Afficher une notification de fin de partie
-              setTimeout(() => {
-                if (data.game.winner === playerColor) {
-                  showToast('🎉 Félicitations ! Vous avez gagné la partie !', 'success', 5000);
-                } else {
-                  showToast('😢 Vous avez perdu la partie', 'error', 5000);
-                }
-              }, 500);
-            }
+          if (previousStatus === 'playing' && newStatus === 'finished' && data.game.winner) {
+            // Afficher une notification de fin de partie
+            setTimeout(() => {
+              if (data.game.winner === playerColor) {
+                showToast('🎉 Félicitations ! Vous avez gagné la partie !', 'success', 5000);
+              } else {
+                showToast('😢 Vous avez perdu la partie', 'error', 5000);
+              }
+            }, 500);
           }
 
           // Mettre à jour l'adversaire
