@@ -4,7 +4,7 @@ import { verifyToken } from '@/lib/auth';
 
 export async function POST(
     request: NextRequest,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
         // Vérifier l'authentification
@@ -27,6 +27,9 @@ export async function POST(
             );
         }
 
+        // Récupérer les paramètres
+        const { id } = await params;
+
         // Récupérer la réponse (accept ou decline)
         const body = await request.json();
         const { action } = body; // 'accept' ou 'decline'
@@ -40,7 +43,7 @@ export async function POST(
 
         // Récupérer l'invitation
         const invitation = await prisma.gameInvitation.findUnique({
-            where: { id: params.id },
+            where: { id },
             include: {
                 game: {
                     include: {
