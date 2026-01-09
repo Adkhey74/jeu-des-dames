@@ -24,7 +24,7 @@ function getApiInstance(): brevo.TransactionalEmailsApi {
         // Méthode alternative si setApiKey n'existe pas
         apiInstance.setDefaultAuthentication({
             apiKey: BREVO_API_KEY
-        } as any);
+        } as { apiKey: string });
     }
     
     return apiInstance;

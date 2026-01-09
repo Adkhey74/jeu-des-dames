@@ -188,7 +188,7 @@ export default function RegisterForm() {
                                 Un email de vérification a été envoyé à votre adresse email.
                             </p>
                             <p className="text-gray-600 text-sm">
-                                Veuillez cliquer sur le lien dans l'email pour activer votre compte.
+                                Veuillez cliquer sur le lien dans l&apos;email pour activer votre compte.
                             </p>
                         </div>
 

@@ -215,15 +215,6 @@ export default function Checkerboard({ pieces, currentTurn, playerColor, onMove 
         return shouldFlip ? 7 - displayCol : displayCol;
     };
 
-    // Fonction pour convertir une position en notation algébrique (A-H, 1-8)
-    const positionToAlgebraic = (row: number, col: number): string => {
-        // Dans le jeu de dames, les colonnes sont A-H (de gauche à droite)
-        // Les lignes sont 1-8 (de bas en haut pour les blancs)
-        // row 0 = ligne 8, row 7 = ligne 1
-        const letter = String.fromCharCode(65 + col); // A=65, B=66, etc.
-        const number = 8 - row; // Inverser : row 0 = 8, row 7 = 1
-        return `${letter}${number}`;
-    };
 
     return (
         <div className="flex flex-col items-center justify-center w-full h-full" style={{ minHeight: 0, maxHeight: '100%', overflow: 'hidden' }}>

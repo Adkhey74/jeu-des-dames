@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useToast } from '@/components/ui/Toast';
 import Navbar from '@/components/layout/Navbar';
@@ -16,18 +16,7 @@ export default function VerifyEmailPage() {
     const [email, setEmail] = useState('');
     const [resending, setResending] = useState(false);
 
-    useEffect(() => {
-        const token = searchParams.get('token');
-        const emailParam = searchParams.get('email');
-        if (emailParam) {
-            setEmail(emailParam);
-        }
-        if (token) {
-            verifyEmail(token);
-        }
-    }, [searchParams]);
-
-    const verifyEmail = async (token: string) => {
+    const verifyEmail = useCallback(async (token: string) => {
         setStatus('loading');
         try {
             const response = await fetch(`/api/auth/verify-email?token=${token}`);
@@ -46,12 +35,23 @@ export default function VerifyEmailPage() {
                 setMessage(data.error || 'Erreur lors de la vérification');
                 showToast(data.error || 'Erreur lors de la vérification', 'error');
             }
-        } catch (error) {
+        } catch {
             setStatus('error');
             setMessage('Erreur de communication avec le serveur');
             showToast('Erreur de communication avec le serveur', 'error');
         }
-    };
+    }, [router, showToast]);
+
+    useEffect(() => {
+        const token = searchParams.get('token');
+        const emailParam = searchParams.get('email');
+        if (emailParam) {
+            setEmail(emailParam);
+        }
+        if (token) {
+            verifyEmail(token);
+        }
+    }, [searchParams, verifyEmail]);
 
     const resendVerificationEmail = async () => {
         if (!email) {
@@ -75,9 +75,9 @@ export default function VerifyEmailPage() {
                 showToast('Email de vérification envoyé !', 'success');
                 setMessage('Un nouvel email de vérification a été envoyé à votre adresse.');
             } else {
-                showToast(data.error || 'Erreur lors de l\'envoi', 'error');
+                showToast(data.error || 'Erreur lors de l&apos;envoi', 'error');
             }
-        } catch (error) {
+        } catch {
             showToast('Erreur de communication avec le serveur', 'error');
         } finally {
             setResending(false);
@@ -157,7 +157,7 @@ export default function VerifyEmailPage() {
                                                     Envoi en cours...
                                                 </>
                                             ) : (
-                                                'Renvoyer l\'email de vérification'
+                                                'Renvoyer l&apos;email de vérification'
                                             )}
                                         </button>
                                         <Link href="/login" className="btn btn-ghost w-full border border-gray-300 text-black hover:bg-gray-100">
@@ -170,10 +170,10 @@ export default function VerifyEmailPage() {
                             {status === 'idle' && (
                                 <>
                                     <h2 className="card-title justify-center text-2xl text-black mb-4">
-                                        Vérification d'email
+                                        Vérification d&apos;email
                                     </h2>
                                     <p className="text-gray-600 mb-6">
-                                        Si vous avez reçu un email de vérification, cliquez sur le lien dans l'email.
+                                        Si vous avez reçu un email de vérification, cliquez sur le lien dans l&apos;email.
                                     </p>
                                     <div className="space-y-4">
                                         <div>
@@ -199,7 +199,7 @@ export default function VerifyEmailPage() {
                                                     Envoi en cours...
                                                 </>
                                             ) : (
-                                                'Renvoyer l\'email de vérification'
+                                                'Renvoyer l&apos;email de vérification'
                                             )}
                                         </button>
                                         <Link href="/login" className="btn btn-ghost w-full border border-gray-300 text-black hover:bg-gray-100">

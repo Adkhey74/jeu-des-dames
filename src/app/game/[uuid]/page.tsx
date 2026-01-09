@@ -64,7 +64,6 @@ export default function GamePage() {
   const [pieces, setPieces] = useState<Piece[]>(initializeBoard());
   const [opponent, setOpponent] = useState<User | null>(null);
   const [gameStatus, setGameStatus] = useState<'waiting' | 'playing' | 'finished'>('waiting');
-  const [winner, setWinner] = useState<PlayerColor | null>(null);
   const [moveHistory, setMoveHistory] = useState<Move[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -162,7 +161,7 @@ export default function GamePage() {
     };
 
     loadGame();
-  }, [uuid, router]);
+  }, [uuid, router, showToast]);
 
   // Fonction pour recharger l'état de la partie
   const loadGameState = useCallback(async () => {
@@ -193,10 +192,7 @@ export default function GamePage() {
             setMoveHistory(data.game.moves as Move[]);
           }
           
-          if (data.game.winner) {
-            setWinner(data.game.winner as PlayerColor);
-            
-            // Si la partie vient de se terminer
+          // Si la partie vient de se terminer
             if (previousStatus === 'playing' && newStatus === 'finished' && data.game.winner) {
               // Afficher une notification de fin de partie
               setTimeout(() => {
@@ -236,7 +232,7 @@ export default function GamePage() {
     } catch (err) {
       console.error('Erreur chargement état:', err);
     }
-  }, [uuid, playerColor]);
+  }, [uuid, playerColor, showToast]);
 
   // Polling pour vérifier les mises à jour de la partie
   useEffect(() => {
@@ -293,7 +289,6 @@ export default function GamePage() {
     const blackPieces = newPieces.filter(p => p.color === 'black');
 
     if (whitePieces.length === 0) {
-      setWinner('black');
       setGameStatus('finished');
       if (playerColor === 'black') {
         showToast('🎉 Félicitations ! Vous avez gagné la partie !', 'success', 5000);
@@ -301,7 +296,6 @@ export default function GamePage() {
         showToast('😢 Vous avez perdu la partie', 'error', 5000);
       }
     } else if (blackPieces.length === 0) {
-      setWinner('white');
       setGameStatus('finished');
       if (playerColor === 'white') {
         showToast('🎉 Félicitations ! Vous avez gagné la partie !', 'success', 5000);
@@ -340,9 +334,6 @@ export default function GamePage() {
           setMoveHistory(data.game.moves as Move[]);
           setCurrentTurn(data.game.currentTurn as PlayerColor);
           setGameStatus(data.game.status as 'waiting' | 'playing' | 'finished');
-          if (data.game.winner) {
-            setWinner(data.game.winner as PlayerColor);
-          }
         }
       }
     } catch (err) {
@@ -452,7 +443,6 @@ export default function GamePage() {
 
       // Mettre à jour l'état local
       setGameStatus('finished');
-      setWinner(playerColor === 'white' ? 'black' : 'white');
       
       // Afficher un toast de confirmation
       showToast('Vous avez abandonné la partie', 'info', 3000);
@@ -702,7 +692,14 @@ export default function GamePage() {
                             </div>
                             <div className="flex items-center gap-1.5">
                               <span className="font-mono text-xs text-white bg-gradient-to-br from-white/10 to-black/30 px-2 py-0.5 rounded border border-white/30">
-                                {positionToAlgebraic(move.from.row, move.from.col)}→{positionToAlgebraic(move.to.row, move.to.col)}
+                                {(() => {
+                                  const positionToAlgebraic = (row: number, col: number): string => {
+                                    const letter = String.fromCharCode(65 + col);
+                                    const number = 8 - row;
+                                    return `${letter}${number}`;
+                                  };
+                                  return `${positionToAlgebraic(move.from.row, move.from.col)}→${positionToAlgebraic(move.to.row, move.to.col)}`;
+                                })()}
                                 {move.capturedPieces && move.capturedPieces.length > 0 && (
                                   <span className="text-red-300 ml-1">
                                     (×{move.capturedPieces.length})
