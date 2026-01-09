@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Navbar from '@/components/layout/Navbar';
 import Header from '@/components/layout/Header';
 import Checkerboard from '@/components/game/Checkerboard';
+import { useToast } from '@/components/ui/Toast';
 import { Piece, Move, PlayerColor, User } from '@/types';
 
 // Fonction pour initialiser le plateau
@@ -42,9 +43,19 @@ function initializeBoard(): Piece[] {
   return pieces;
 }
 
+// Fonction pour convertir une position en notation algébrique (A-H, 1-8)
+function positionToAlgebraic(row: number, col: number): string {
+  // Colonnes : A-H (de gauche à droite, col 0 = A, col 7 = H)
+  // Lignes : 1-8 (de bas en haut pour les blancs, row 0 = ligne 8, row 7 = ligne 1)
+  const letter = String.fromCharCode(65 + col); // A=65, B=66, etc.
+  const number = 8 - row; // Inverser : row 0 = 8, row 7 = 1
+  return `${letter}${number}`;
+}
+
 export default function GamePage() {
   const params = useParams();
   const router = useRouter();
+  const { showToast } = useToast();
   const uuid = params.uuid as string;
 
   const [user, setUser] = useState<User | null>(null);
@@ -57,6 +68,14 @@ export default function GamePage() {
   const [moveHistory, setMoveHistory] = useState<Move[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [gameId, setGameId] = useState<string | null>(null);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [showAbandonModal, setShowAbandonModal] = useState(false);
+  const [abandoning, setAbandoning] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [inviting, setInviting] = useState<string | null>(null);
   const previousStatusRef = useRef<'waiting' | 'playing' | 'finished'>('waiting');
 
   useEffect(() => {
@@ -90,6 +109,7 @@ export default function GamePage() {
 
         // Mettre à jour l'état de la partie
         if (data.game) {
+          setGameId(data.game.id);
           setGameStatus(data.game.status as 'waiting' | 'playing' | 'finished');
           setCurrentTurn(data.game.currentTurn as PlayerColor);
           
@@ -129,7 +149,7 @@ export default function GamePage() {
               const opponentName = data.playerColor === 'white' 
                 ? `${data.game.blackPlayer?.prenom} ${data.game.blackPlayer?.nom}`
                 : `${data.game.whitePlayer?.prenom} ${data.game.whitePlayer?.nom}`;
-              alert(`🎮 ${opponentName} a rejoint la partie ! La partie commence.`);
+              showToast(`🎮 ${opponentName} a rejoint la partie ! La partie commence.`, 'success');
             }, 500);
           }
         }
@@ -176,13 +196,15 @@ export default function GamePage() {
           if (data.game.winner) {
             setWinner(data.game.winner as PlayerColor);
             
-            // Si la partie vient de se terminer et que l'utilisateur a gagné (abandon de l'adversaire)
-            if (previousStatus === 'playing' && 
-                newStatus === 'finished' && 
-                data.game.winner === playerColor) {
-              // Afficher une notification de victoire
+            // Si la partie vient de se terminer
+            if (previousStatus === 'playing' && newStatus === 'finished' && data.game.winner) {
+              // Afficher une notification de fin de partie
               setTimeout(() => {
-                alert('🎉 Félicitations ! Votre adversaire a abandonné. Vous avez gagné !');
+                if (data.game.winner === playerColor) {
+                  showToast('🎉 Félicitations ! Vous avez gagné la partie !', 'success', 5000);
+                } else {
+                  showToast('😢 Vous avez perdu la partie', 'error', 5000);
+                }
               }, 500);
             }
           }
@@ -202,7 +224,7 @@ export default function GamePage() {
                 ? `${data.game.blackPlayer?.prenom} ${data.game.blackPlayer?.nom}`
                 : `${data.game.whitePlayer?.prenom} ${data.game.whitePlayer?.nom}`;
               if (opponentName) {
-                alert(`🎮 ${opponentName} a rejoint la partie ! La partie commence.`);
+                showToast(`🎮 ${opponentName} a rejoint la partie ! La partie commence.`, 'success');
               }
             }, 500);
           }
@@ -273,9 +295,19 @@ export default function GamePage() {
     if (whitePieces.length === 0) {
       setWinner('black');
       setGameStatus('finished');
+      if (playerColor === 'black') {
+        showToast('🎉 Félicitations ! Vous avez gagné la partie !', 'success', 5000);
+      } else {
+        showToast('😢 Vous avez perdu la partie', 'error', 5000);
+      }
     } else if (blackPieces.length === 0) {
       setWinner('white');
       setGameStatus('finished');
+      if (playerColor === 'white') {
+        showToast('🎉 Félicitations ! Vous avez gagné la partie !', 'success', 5000);
+      } else {
+        showToast('😢 Vous avez perdu la partie', 'error', 5000);
+      }
     }
 
     // Envoyer le coup à l'API
@@ -323,14 +355,81 @@ export default function GamePage() {
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(uuid);
-    alert('Code copié dans le presse-papier !');
+    showToast('Code copié dans le presse-papier !', 'success');
   };
 
-  const handleAbandon = async () => {
-    if (!confirm('Êtes-vous sûr de vouloir abandonner cette partie ?')) {
+  const handleSearchUsers = async (query: string) => {
+    if (query.length < 2) {
+      setSearchResults([]);
       return;
     }
 
+    setSearching(true);
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await fetch(`/api/users/search?q=${encodeURIComponent(query)}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data.users || []);
+      }
+    } catch (error) {
+      console.error('Erreur recherche:', error);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const handleInviteUser = async (inviteeUsername: string) => {
+    if (!gameId) return;
+
+    setInviting(inviteeUsername);
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await fetch('/api/game/invite', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          gameId,
+          inviteeUsername,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        showToast(`Invitation envoyée à @${inviteeUsername}`, 'success');
+        setShowInviteModal(false);
+        setSearchQuery('');
+        setSearchResults([]);
+      } else {
+        showToast(data.error || 'Erreur lors de l\'envoi de l\'invitation', 'error');
+      }
+    } catch (error) {
+      console.error('Erreur:', error);
+      showToast('Erreur de communication avec le serveur', 'error');
+    } finally {
+      setInviting(null);
+    }
+  };
+
+  const handleAbandon = () => {
+    setShowAbandonModal(true);
+  };
+
+  const confirmAbandon = async () => {
+    setAbandoning(true);
     try {
       const token = localStorage.getItem('token');
       if (!token) return;
@@ -345,13 +444,21 @@ export default function GamePage() {
 
       if (!response.ok) {
         const data = await response.json();
-        alert(data.error || 'Erreur lors de l\'abandon');
+        showToast(data.error || 'Erreur lors de l\'abandon', 'error');
+        setShowAbandonModal(false);
+        setAbandoning(false);
         return;
       }
 
       // Mettre à jour l'état local
       setGameStatus('finished');
       setWinner(playerColor === 'white' ? 'black' : 'white');
+      
+      // Afficher un toast de confirmation
+      showToast('Vous avez abandonné la partie', 'info', 3000);
+      
+      // Fermer la modale
+      setShowAbandonModal(false);
       
       // Rediriger vers le dashboard après un court délai
       setTimeout(() => {
@@ -360,7 +467,10 @@ export default function GamePage() {
 
     } catch (err) {
       console.error('Erreur abandon:', err);
-      alert('Erreur lors de l\'abandon de la partie');
+      showToast('Erreur lors de l\'abandon de la partie', 'error');
+      setShowAbandonModal(false);
+    } finally {
+      setAbandoning(false);
     }
   };
 
@@ -369,12 +479,12 @@ export default function GamePage() {
       <>
         <Navbar />
         <Header />
-        <div className="min-h-screen pt-16 lg:pt-20 flex items-center justify-center bg-gradient-gaming">
-          <div className="text-center">
-            <span className="loading loading-spinner loading-lg text-indigo-600"></span>
-            <p className="mt-4 text-gray-600">Chargement de la partie...</p>
-          </div>
-        </div>
+                <div className="min-h-screen ml-20 lg:ml-64 pt-16 lg:pt-20 flex items-center justify-center bg-gradient-gaming">
+                  <div className="text-center">
+                    <span className="loading loading-spinner loading-lg text-white"></span>
+                    <p className="mt-4 text-white/70">Chargement de la partie...</p>
+                  </div>
+                </div>
       </>
     );
   }
@@ -384,18 +494,18 @@ export default function GamePage() {
       <>
         <Navbar />
         <Header />
-        <div className="min-h-screen pt-16 lg:pt-20 flex items-center justify-center bg-gradient-gaming">
-          <div className="card bg-white shadow-xl border-2 border-red-200 max-w-md">
+        <div className="min-h-screen ml-20 lg:ml-64 pt-16 lg:pt-20 flex items-center justify-center bg-gradient-gaming">
+          <div className="card gaming-card-header shadow-xl border-2 border-white max-w-md">
             <div className="card-body text-center">
-              <div className="alert alert-error">
-                <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+              <div className="alert bg-gray-900 text-white border border-gray-700">
+                <svg xmlns="http://www.w3.org/2000/svg" className="stroke-white shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <span>{error}</span>
+                <span className="text-white">{error}</span>
               </div>
               <button 
                 onClick={() => router.push('/dashboard')} 
-                className="btn btn-primary mt-4"
+                className="btn bg-white text-black border-0 hover:bg-gray-200 mt-4"
               >
                 Retour au dashboard
               </button>
@@ -411,13 +521,13 @@ export default function GamePage() {
       <>
         <Navbar />
         <Header />
-        <div className="min-h-screen pt-16 lg:pt-20 flex items-center justify-center bg-gradient-gaming">
-          <div className="card bg-white shadow-xl border-2 border-indigo-200 max-w-md">
+        <div className="min-h-screen ml-20 lg:ml-64 pt-16 lg:pt-20 flex items-center justify-center bg-gradient-gaming">
+          <div className="card gaming-card-header shadow-xl border-2 border-white/30 max-w-md">
             <div className="card-body text-center">
-              <p className="text-gray-600 mb-4">Vous n&apos;êtes pas autorisé à voir cette partie.</p>
+              <p className="text-white mb-4">Vous n&apos;êtes pas autorisé à voir cette partie.</p>
               <button 
                 onClick={() => router.push('/dashboard')} 
-                className="btn btn-primary"
+                className="btn bg-white text-black border-0 hover:bg-gray-200"
               >
                 Retour au dashboard
               </button>
@@ -432,36 +542,39 @@ export default function GamePage() {
     <>
       <Navbar />
       <Header />
-      <main className="h-screen overflow-hidden ml-20 lg:ml-64 pt-16 lg:pt-20 pb-2 pr-2 lg:pb-3 lg:pr-3 bg-gradient-gaming">
-        <div className="h-full">
-          <div className="grid grid-cols-1 xl:grid-cols-5 gap-3 h-full">
+      <main className="min-h-screen ml-20 lg:ml-64 pt-16 lg:pt-20 pb-2 pr-2 lg:pb-3 lg:pr-3 bg-gradient-gaming" style={{ height: 'calc(100vh - 4rem)', maxHeight: 'calc(100vh - 4rem)' }}>
+        <div className="h-full" style={{ height: '100%', maxHeight: '100%', overflow: 'hidden' }}>
+          <div className="grid grid-cols-1 xl:grid-cols-5 gap-3 h-full" style={{ minHeight: 0, height: '100%', maxHeight: '100%' }}>
 
             {/* Panneau de gauche - Info joueur blanc */}
-            <div className="order-3 xl:order-1 flex flex-col h-full">
-              <div className={`card bg-white shadow-xl border-2 rounded-xl overflow-hidden transition-all duration-300 flex-1 flex flex-col ${
+            <div className="order-3 xl:order-1 flex flex-col h-full" style={{ minHeight: 0, maxHeight: '100%', overflow: 'hidden' }}>
+              <div className={`card gaming-card-header shadow-xl border-2 rounded-xl overflow-hidden transition-all duration-300 flex-shrink-0 flex flex-col ${
                 currentTurn === 'white' && gameStatus === 'playing' 
-                  ? 'border-indigo-400 shadow-2xl ring-2 ring-indigo-200' 
-                  : 'border-indigo-100 hover:border-indigo-300'
+                  ? 'border-white shadow-2xl ring-2 ring-white/20' 
+                  : 'border-white/30 hover:border-white/50'
               }`}>
                 <div className={`card-body p-3 flex-1 flex flex-col ${
                   currentTurn === 'white' && gameStatus === 'playing' 
-                    ? 'bg-gradient-to-br from-indigo-50/50 to-purple-50/50' 
+                    ? 'bg-gradient-to-br from-white/10 to-black/20' 
                     : ''
                 }`}>
                   <div className="flex items-center gap-2 mb-2">
-                    <div className={`w-8 h-8 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 border-2 flex items-center justify-center shadow-md transition-all ${
+                    <div className={`w-8 h-8 rounded-full bg-gradient-to-br from-gray-700 to-gray-800 border-2 flex items-center justify-center shadow-md transition-all ${
                       currentTurn === 'white' && gameStatus === 'playing' 
-                        ? 'border-indigo-400 ring-2 ring-indigo-300 animate-pulse' 
-                        : 'border-gray-300'
+                        ? 'border-white ring-2 ring-white/30 animate-pulse' 
+                        : 'border-white/30'
                     }`}>
-                      <div className="w-5 h-5 rounded-full bg-white border border-gray-400 shadow-inner"></div>
+                      <div className="w-5 h-5 rounded-full bg-white border border-white/50 shadow-inner"></div>
                     </div>
                     <div className="flex-1">
-                      <h3 className="card-title text-sm text-gray-800">Joueur Blanc</h3>
+                      <h3 className="card-title text-sm text-white">Joueur Blanc</h3>
                       {currentTurn === 'white' && gameStatus === 'playing' && (
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></div>
-                          <span className="text-xs font-semibold text-indigo-600">Au tour</span>
+                        <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-black shadow-lg ring-2 ring-white/50 animate-turn-glow">
+                          <div className="relative flex items-center justify-center">
+                            <div className="absolute w-3 h-3 rounded-full bg-black/20 animate-pulse"></div>
+                            <div className="relative w-2 h-2 rounded-full bg-black"></div>
+                          </div>
+                          <span className="text-xs font-bold tracking-tight">À VOTRE TOUR</span>
                         </div>
                       )}
                     </div>
@@ -471,16 +584,18 @@ export default function GamePage() {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <div className="avatar placeholder">
-                          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-full w-10 h-10 shadow-md">
-                            <span className="text-sm font-bold">{user.prenom[0]}{user.nom[0]}</span>
+                          <div className="bg-black text-white rounded-full w-10 h-10 shadow-md flex items-center justify-center" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ display: 'block', margin: '0 auto' }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm text-gray-900 truncate">{user.prenom} {user.nom}</p>
-                          <p className="text-xs text-gray-600 truncate">@{user.username}</p>
+                          <p className="font-bold text-sm text-white truncate">{user.prenom} {user.nom}</p>
+                          <p className="text-xs text-white/70 truncate">@{user.username}</p>
                         </div>
                       </div>
-                      <div className="badge bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0 shadow-md w-full justify-center py-2 text-xs">
+                      <div className="badge bg-white text-black border-0 shadow-md w-full justify-center py-2 text-xs">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
@@ -491,39 +606,41 @@ export default function GamePage() {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <div className="avatar placeholder">
-                          <div className="bg-gradient-to-br from-gray-400 to-gray-500 text-white rounded-full w-10 h-10 shadow-md">
-                            <span className="text-sm font-bold">{opponent.prenom[0]}{opponent.nom[0]}</span>
+                          <div className="bg-gradient-to-br from-white to-gray-300 text-black rounded-full w-10 h-10 shadow-md flex items-center justify-center" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ display: 'block', margin: '0 auto' }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm text-gray-900 truncate">{opponent.prenom} {opponent.nom}</p>
-                          <p className="text-xs text-gray-600 truncate">@{opponent.username}</p>
+                          <p className="font-bold text-sm text-white truncate">{opponent.prenom} {opponent.nom}</p>
+                          <p className="text-xs text-gray-300 truncate">@{opponent.username}</p>
                         </div>
                       </div>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-2 py-2">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-md animate-pulse">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-white/20 to-black/40 flex items-center justify-center shadow-md animate-pulse">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
-                      <p className="text-xs font-medium text-gray-500">En attente...</p>
+                      <p className="text-xs font-medium text-white/60">En attente...</p>
                     </div>
                   )}
 
                   <div className={`mt-3 p-3 rounded-lg border-2 transition-all ${
                     currentTurn === 'white' && gameStatus === 'playing'
-                      ? 'bg-gradient-to-br from-indigo-100 to-purple-100 border-indigo-300 shadow-md'
-                      : 'bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-100'
+                      ? 'bg-gradient-to-br from-white/20 to-black/40 border-white shadow-md'
+                      : 'bg-gradient-to-br from-white/10 to-black/30 border-white/30'
                   }`}>
                     <div className="flex items-center justify-between mb-1">
-                      <p className="text-xs font-semibold text-gray-700">Pièces</p>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <p className="text-xs font-semibold text-white">Pièces</p>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
-                    <p className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    <p className="text-4xl font-bold text-white">
                       {pieces.filter(p => p.color === 'white').length}
                     </p>
                   </div>
@@ -531,27 +648,35 @@ export default function GamePage() {
               </div>
 
               {/* Historique des coups */}
-              <div className="card bg-white shadow-xl border-2 border-indigo-100 hover:border-indigo-300 transition-all rounded-xl overflow-hidden mt-2 flex-1 flex flex-col min-h-0">
-                <div className="card-body p-3 flex-1 flex flex-col min-h-0">
-                  <div className="flex items-center gap-2 mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h3 className="card-title text-xs text-gray-800">Historique</h3>
+              <div className="card gaming-card-header shadow-xl border-2 border-white/30 hover:border-white/50 transition-all rounded-xl overflow-hidden mt-2 flex-1 flex flex-col min-h-0" style={{ minHeight: 0, maxHeight: '100%', overflow: 'hidden' }}>
+                <div className="card-body p-3 flex-1 flex flex-col min-h-0" style={{ minHeight: 0, maxHeight: '100%', overflow: 'hidden' }}>
+                  <div className="flex items-center justify-between mb-2 flex-shrink-0">
+                    <div className="flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <h3 className="card-title text-xs text-white">Historique</h3>
+                    </div>
                     {moveHistory.length > 0 && (
-                      <div className="badge badge-primary badge-xs">{moveHistory.length}</div>
+                      <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-gradient-to-br from-white/20 to-black/40 border border-white/30 shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span className="text-xs font-bold text-white">{moveHistory.length}</span>
+                        <span className="text-xs text-white/70">coups</span>
+                      </div>
                     )}
                   </div>
-                  <div className="divider my-1 opacity-30"></div>
-                  <div className="overflow-y-auto flex-1 text-xs space-y-1.5 scrollbar-thin scrollbar-thumb-indigo-300 scrollbar-track-indigo-100">
+                  <div className="divider my-1 opacity-30 flex-shrink-0"></div>
+                  <div className="overflow-y-auto flex-1 text-xs space-y-1.5 min-h-0" style={{ minHeight: 0, maxHeight: '100%' }}>
                     {moveHistory.length === 0 ? (
                       <div className="text-center py-4">
-                        <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-gradient-to-br from-white/20 to-black/40 flex items-center justify-center border border-white/30">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                           </svg>
                         </div>
-                        <p className="text-gray-500 text-xs font-medium">Aucun coup</p>
+                        <p className="text-white/60 text-xs font-medium">Aucun coup</p>
                       </div>
                     ) : (
                       moveHistory.map((move, index) => {
@@ -561,26 +686,31 @@ export default function GamePage() {
                             key={index} 
                             className={`flex justify-between items-center p-2 rounded-md border transition-all ${
                               isRecent
-                                ? 'bg-gradient-to-r from-indigo-100 to-purple-100 border-indigo-300 shadow-sm ring-1 ring-indigo-200'
-                                : 'bg-gradient-to-r from-indigo-50 to-purple-50 border-indigo-100 hover:shadow-sm hover:border-indigo-200'
+                                ? 'bg-gradient-to-br from-white/20 to-black/40 border-white shadow-sm ring-1 ring-white/20'
+                                : 'bg-gradient-to-br from-white/10 to-black/30 border-white/30 hover:shadow-sm hover:border-white/50'
                             }`}
                           >
                             <div className="flex items-center gap-1.5">
                               <div className={`w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold ${
                                 isRecent
-                                  ? 'bg-indigo-600 text-white shadow-md'
-                                  : 'bg-indigo-200 text-indigo-700'
+                                  ? 'bg-white text-black shadow-md'
+                                  : 'bg-gradient-to-br from-white/30 to-black/50 text-white'
                               }`}>
                                 {index + 1}
                               </div>
-                              <span className="font-semibold text-gray-700 text-xs">#{index + 1}</span>
+                              <span className="font-semibold text-white text-xs">#{index + 1}</span>
                             </div>
                             <div className="flex items-center gap-1.5">
-                              <span className="font-mono text-xs text-gray-600 bg-white px-2 py-0.5 rounded border border-indigo-100">
-                                ({move.from.row},{move.from.col})→({move.to.row},{move.to.col})
+                              <span className="font-mono text-xs text-white bg-gradient-to-br from-white/10 to-black/30 px-2 py-0.5 rounded border border-white/30">
+                                {positionToAlgebraic(move.from.row, move.from.col)}→{positionToAlgebraic(move.to.row, move.to.col)}
+                                {move.capturedPieces && move.capturedPieces.length > 0 && (
+                                  <span className="text-red-300 ml-1">
+                                    (×{move.capturedPieces.length})
+                                  </span>
+                                )}
                               </span>
                               {isRecent && (
-                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></div>
+                                <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></div>
                               )}
                             </div>
                           </div>
@@ -593,125 +723,86 @@ export default function GamePage() {
             </div>
 
             {/* Centre - Plateau de jeu */}
-            <div className="order-1 xl:col-span-3 xl:order-2 flex flex-col h-full min-h-0">
-              <div className="card bg-white shadow-2xl border-2 border-indigo-100 rounded-xl overflow-hidden flex-1 flex flex-col min-h-0">
-                <div className="card-body items-center p-2 flex-1 flex flex-col min-h-0">
-                  <div className="mb-1 text-center w-full flex-shrink-0">
-                    <div className="inline-flex items-center gap-1.5 mb-1 px-3 py-1.5 bg-gradient-to-r from-indigo-500 via-purple-600 to-indigo-600 rounded-lg shadow-lg border border-white/20 backdrop-blur-sm">
-                      <div className="w-6 h-6 bg-white/30 rounded-md flex items-center justify-center backdrop-blur-md shadow-sm">
-                        <span className="text-white text-sm">🎲</span>
-                      </div>
-                      <div className="flex flex-col items-start">
-                        <h2 className="text-xs font-bold text-white drop-shadow-md">
-                          Partie en cours
-                        </h2>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <span className="font-mono text-xs text-white/90 bg-white/20 px-1.5 py-0.5 rounded backdrop-blur-sm">
-                            {uuid.substring(0, 8).toUpperCase()}
-                          </span>
-                          <button
-                            onClick={handleCopyCode}
-                            className="p-0.5 rounded bg-white/20 hover:bg-white/30 transition-all backdrop-blur-sm"
-                            title="Copier le code"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-2.5 w-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                            </svg>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {gameStatus === 'waiting' && !opponent && (
-                      <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-indigo-50 border border-indigo-200 rounded-lg p-3 text-sm shadow-md">
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center shadow-md animate-pulse">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-white h-4 w-4" fill="none" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
+            <div className="order-1 xl:col-span-3 xl:order-2 flex flex-col h-full min-h-0" style={{ minHeight: 0, maxHeight: '100%' }}>
+              <div className="card gaming-card-header shadow-2xl border-2 border-white/30 rounded-xl overflow-hidden flex-1 flex flex-col min-h-0" style={{ minHeight: 0 }}>
+                <div className="card-body items-center p-2 flex-1 flex flex-col min-h-0" style={{ minHeight: 0, overflow: 'hidden' }}>
+                  <div className="mb-2 text-center w-full flex-shrink-0">
+                    {/* Statut de la partie - fusionné */}
+                    {gameStatus === 'waiting' && !opponent ? (
+                      // En attente d'un adversaire
+                      <div className="bg-gradient-to-br from-white/15 to-black/40 border border-white/30 rounded-xl p-3 shadow-lg backdrop-blur-sm">
+                        <div className="flex items-center gap-3">
+                          <div className="relative flex-shrink-0">
+                            <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                            </div>
+                            <div className="absolute inset-0 w-10 h-10 bg-white rounded-full animate-ping opacity-20"></div>
                           </div>
-                          <div className="flex-1">
-                            <p className="font-bold text-indigo-700 text-sm">En attente d&apos;un adversaire...</p>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-white text-sm mb-0.5">En attente d&apos;un adversaire...</p>
+                            <p className="text-white/70 text-xs truncate">Partagez le code pour inviter un joueur</p>
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            <div className="bg-white/10 border border-white/20 rounded-lg px-3 py-1.5">
+                              <p className="text-white/60 text-xs mb-0.5">Code</p>
+                              <p className="font-mono text-sm font-bold text-white">{uuid.substring(0, 8).toUpperCase()}</p>
+                            </div>
                             <button 
                               onClick={handleCopyCode} 
-                              className="btn btn-sm bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0 hover:from-indigo-600 hover:to-purple-700 shadow-md mt-1"
+                              className="btn btn-sm bg-white text-black border-0 hover:bg-gray-200 shadow-md hover:shadow-lg transition-all group/btn whitespace-nowrap"
                             >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 group-hover/btn:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                               </svg>
-                              Copier: {uuid.substring(0, 8).toUpperCase()}
+                              Copier
                             </button>
                           </div>
                         </div>
                       </div>
-                    )}
-                    
-                    {gameStatus === 'playing' && opponent && (
-                      <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-300 rounded-lg p-2 text-xs shadow-md">
-                        <div className="flex items-center gap-2">
-                          <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center shadow-md">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="stroke-white h-3 w-3" fill="none" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    ) : (
+                      // Partie en cours
+                      <div className="inline-flex items-center gap-3 px-4 py-3 bg-white rounded-xl shadow-xl border border-gray-200 hover:shadow-2xl transition-all duration-300 group">
+                        <div className="relative flex-shrink-0">
+                          <div className="w-10 h-10 bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg flex items-center justify-center ring-1 ring-gray-200 group-hover:ring-gray-300 transition-all shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                             </svg>
                           </div>
-                          <p className="font-bold text-green-700 text-xs">
-                            {opponent.prenom} {opponent.nom} a rejoint !
-                          </p>
+                          <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full border-2 border-white shadow-md animate-pulse"></div>
                         </div>
-                      </div>
-                    )}
-
-                    {gameStatus === 'finished' && winner && (
-                      <div className={`
-                        rounded-2xl p-8 text-lg shadow-2xl border-2 animate-in fade-in slide-in-from-top-4 duration-500
-                        ${winner === playerColor
-                          ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-300'
-                          : 'bg-gradient-to-r from-red-50 to-rose-50 border-red-300'
-                        }
-                      `}>
-                        <div className="flex flex-col items-center gap-4 text-center">
-                          <div className={`
-                            w-20 h-20 rounded-full flex items-center justify-center shadow-xl animate-bounce
-                            ${winner === playerColor ? 'bg-gradient-to-br from-green-500 to-emerald-600' : 'bg-gradient-to-br from-red-500 to-rose-600'}
-                          `}>
-                            {winner === playerColor ? (
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 stroke-white" fill="none" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
-                            ) : (
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 stroke-white" fill="none" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            )}
-                          </div>
-                          <div>
-                            <span className={`font-bold text-3xl block mb-2 ${winner === playerColor ? 'text-green-700' : 'text-red-700'}`}>
-                              {winner === playerColor ? '🎉 Vous avez gagné !' : '😢 Vous avez perdu'}
-                            </span>
-                            {winner === playerColor && opponent && (
-                              <p className="text-sm text-gray-600 mt-2">
-                                {opponent.prenom} {opponent.nom} a abandonné la partie
-                              </p>
-                            )}
-                          </div>
+                        <div className="flex items-center gap-3">
+                          <h2 className="text-sm font-bold text-black tracking-tight whitespace-nowrap">
+                            Partie en cours
+                          </h2>
+                          <div className="h-5 w-px bg-gray-300"></div>
+                          <span className="font-mono text-xs font-semibold text-black bg-gray-50 px-3 py-1.5 rounded-lg border border-gray-200 shadow-sm whitespace-nowrap">
+                            {uuid.substring(0, 8).toUpperCase()}
+                          </span>
                           <button
-                            onClick={() => router.push('/dashboard')}
-                            className="btn bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0 hover:from-indigo-600 hover:to-purple-700 shadow-lg hover:shadow-xl transition-all mt-4"
+                            onClick={handleCopyCode}
+                            className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-all duration-200 border border-gray-200 shadow-sm hover:shadow-md group/btn flex-shrink-0"
+                            title="Copier le code"
                           >
-                            Retour au dashboard
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-black group-hover/btn:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
                           </button>
                         </div>
                       </div>
                     )}
                   </div>
 
-                  <div className="flex-1 w-full flex items-center justify-center min-h-0 overflow-hidden" style={{ minHeight: 0 }}>
+                  <div className="flex-1 w-full flex items-center justify-center min-h-0 overflow-hidden" style={{ minHeight: 0, maxHeight: '100%', overflow: 'hidden' }}>
                     {playerColor && (
-                      <div className="w-full h-full max-w-full max-h-full flex items-center justify-center" style={{ 
+                      <div className="w-full h-full flex items-center justify-center" style={{ 
                         width: '100%', 
                         height: '100%',
                         minWidth: 0,
-                        minHeight: 0
+                        minHeight: 0,
+                        maxWidth: '100%',
+                        maxHeight: '100%'
                       }}>
                         <Checkerboard
                           pieces={pieces}
@@ -727,31 +818,34 @@ export default function GamePage() {
             </div>
 
             {/* Panneau de droite - Info joueur noir */}
-            <div className="order-2 xl:order-3 flex flex-col h-full">
-              <div className={`card bg-white shadow-xl border-2 rounded-xl overflow-hidden transition-all duration-300 flex-1 flex flex-col ${
+            <div className="order-2 xl:order-3 flex flex-col h-full" style={{ minHeight: 0, maxHeight: '100%' }}>
+              <div className={`card gaming-card-header shadow-xl border-2 rounded-xl overflow-hidden transition-all duration-300 flex-shrink-0 flex flex-col ${
                 currentTurn === 'black' && gameStatus === 'playing' 
-                  ? 'border-indigo-400 shadow-2xl ring-2 ring-indigo-200' 
-                  : 'border-indigo-100 hover:border-indigo-300'
+                  ? 'border-white shadow-2xl ring-2 ring-white/20' 
+                  : 'border-white/30 hover:border-white/50'
               }`}>
                 <div className={`card-body p-3 flex-1 flex flex-col ${
                   currentTurn === 'black' && gameStatus === 'playing' 
-                    ? 'bg-gradient-to-br from-indigo-50/50 to-purple-50/50' 
+                    ? 'bg-gradient-to-br from-white/10 to-black/20' 
                     : ''
                 }`}>
                   <div className="flex items-center gap-2 mb-2">
                     <div className={`w-8 h-8 rounded-full bg-gradient-to-br from-gray-800 to-gray-900 border-2 flex items-center justify-center shadow-md transition-all ${
                       currentTurn === 'black' && gameStatus === 'playing' 
-                        ? 'border-indigo-400 ring-2 ring-indigo-300 animate-pulse' 
-                        : 'border-gray-700'
+                        ? 'border-white ring-2 ring-white/30 animate-pulse' 
+                        : 'border-white/30'
                     }`}>
-                      <div className="w-5 h-5 rounded-full bg-gray-900 border border-gray-700 shadow-inner"></div>
+                      <div className="w-5 h-5 rounded-full bg-black border border-white/30 shadow-inner"></div>
                     </div>
                     <div className="flex-1">
-                      <h3 className="card-title text-sm text-gray-800">Joueur Noir</h3>
+                      <h3 className="card-title text-sm text-white">Joueur Noir</h3>
                       {currentTurn === 'black' && gameStatus === 'playing' && (
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <div className="w-1.5 h-1.5 rounded-full bg-indigo-600 animate-pulse"></div>
-                          <span className="text-xs font-semibold text-indigo-600">Au tour</span>
+                        <div className="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white text-black shadow-lg ring-2 ring-white/50 animate-turn-glow">
+                          <div className="relative flex items-center justify-center">
+                            <div className="absolute w-3 h-3 rounded-full bg-black/20 animate-pulse"></div>
+                            <div className="relative w-2 h-2 rounded-full bg-black"></div>
+                          </div>
+                          <span className="text-xs font-bold tracking-tight">À VOTRE TOUR</span>
                         </div>
                       )}
                     </div>
@@ -761,16 +855,18 @@ export default function GamePage() {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <div className="avatar placeholder">
-                          <div className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-full w-10 h-10 shadow-md">
-                            <span className="text-sm font-bold">{user.prenom[0]}{user.nom[0]}</span>
+                          <div className="bg-white text-black rounded-full w-10 h-10 shadow-md flex items-center justify-center" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ display: 'block', margin: '0 auto' }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm text-gray-900 truncate">{user.prenom} {user.nom}</p>
-                          <p className="text-xs text-gray-600 truncate">@{user.username}</p>
+                          <p className="font-bold text-sm text-white truncate">{user.prenom} {user.nom}</p>
+                          <p className="text-xs text-white/70 truncate">@{user.username}</p>
                         </div>
                       </div>
-                      <div className="badge bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0 shadow-md w-full justify-center py-2 text-xs">
+                      <div className="badge bg-white text-black border-0 shadow-md w-full justify-center py-2 text-xs">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                         </svg>
@@ -781,39 +877,41 @@ export default function GamePage() {
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <div className="avatar placeholder">
-                          <div className="bg-gradient-to-br from-gray-400 to-gray-500 text-white rounded-full w-10 h-10 shadow-md">
-                            <span className="text-sm font-bold">{opponent.prenom[0]}{opponent.nom[0]}</span>
+                          <div className="bg-gradient-to-br from-white to-gray-300 text-black rounded-full w-10 h-10 shadow-md flex items-center justify-center" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" style={{ display: 'block', margin: '0 auto' }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
                           </div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="font-bold text-sm text-gray-900 truncate">{opponent.prenom} {opponent.nom}</p>
-                          <p className="text-xs text-gray-600 truncate">@{opponent.username}</p>
+                          <p className="font-bold text-sm text-white truncate">{opponent.prenom} {opponent.nom}</p>
+                          <p className="text-xs text-gray-300 truncate">@{opponent.username}</p>
                         </div>
                       </div>
                     </div>
                   ) : (
                     <div className="flex flex-col items-center gap-2 py-2">
-                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center shadow-md animate-pulse">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <div className="w-12 h-12 rounded-full bg-gradient-to-br from-white/20 to-black/40 flex items-center justify-center shadow-md animate-pulse">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white/60" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </div>
-                      <p className="text-xs font-medium text-gray-500">En attente...</p>
+                      <p className="text-xs font-medium text-white/60">En attente...</p>
                     </div>
                   )}
 
                   <div className={`mt-3 p-3 rounded-lg border-2 transition-all ${
                     currentTurn === 'black' && gameStatus === 'playing'
-                      ? 'bg-gradient-to-br from-indigo-100 to-purple-100 border-indigo-300 shadow-md'
-                      : 'bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-100'
+                      ? 'bg-gradient-to-br from-white/20 to-black/40 border-white shadow-md'
+                      : 'bg-gradient-to-br from-white/10 to-black/30 border-white/30'
                   }`}>
                     <div className="flex items-center justify-between mb-1">
-                      <p className="text-xs font-semibold text-gray-700">Pièces</p>
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <p className="text-xs font-semibold text-white">Pièces</p>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
                     </div>
-                    <p className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                    <p className="text-4xl font-bold text-white">
                       {pieces.filter(p => p.color === 'black').length}
                     </p>
                   </div>
@@ -821,18 +919,29 @@ export default function GamePage() {
               </div>
 
               {/* Actions de jeu */}
-              <div className="card bg-white shadow-xl border-2 border-indigo-100 hover:border-indigo-300 transition-all rounded-xl overflow-hidden mt-2">
+              <div className="card gaming-card-header shadow-xl border-2 border-white/30 hover:border-white/50 transition-all rounded-xl overflow-hidden mt-2 flex-shrink-0">
                 <div className="card-body p-3">
                   <div className="flex items-center gap-2 mb-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
                     </svg>
-                    <h3 className="card-title text-xs text-gray-800">Actions</h3>
+                    <h3 className="card-title text-xs text-white">Actions</h3>
                   </div>
                   <div className="divider my-1.5 opacity-30"></div>
                   <div className="space-y-2">
+                    {playerColor === 'white' && gameStatus === 'waiting' && !opponent && (
+                      <button
+                        className="btn btn-sm w-full text-xs bg-white border-2 border-white text-black hover:bg-gray-200 hover:border-white hover:shadow-md transition-all duration-200 group"
+                        onClick={() => setShowInviteModal(true)}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                        </svg>
+                        Inviter un joueur
+                      </button>
+                    )}
                     <button
-                      className="btn btn-sm w-full text-xs border border-red-300 text-red-600 hover:bg-red-50 hover:border-red-400 hover:shadow-md transition-all duration-200 group"
+                      className="btn btn-sm w-full text-xs bg-white border-2 border-white text-black hover:bg-gray-200 hover:border-white hover:shadow-md transition-all duration-200 group"
                       onClick={handleAbandon}
                       disabled={gameStatus === 'finished'}
                     >
@@ -842,7 +951,7 @@ export default function GamePage() {
                       Abandonner
                     </button>
                     <button
-                      className="btn btn-sm bg-gradient-to-r from-indigo-500 to-purple-600 text-white border-0 hover:from-indigo-600 hover:to-purple-700 shadow-md hover:shadow-lg transition-all w-full group"
+                      className="btn btn-sm bg-white text-black border-0 hover:bg-gray-200 shadow-md hover:shadow-lg transition-all w-full group"
                       onClick={handleCopyCode}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -851,7 +960,7 @@ export default function GamePage() {
                       Partager
                     </button>
                     <button
-                      className="btn btn-sm btn-ghost w-full text-xs border border-indigo-200 text-indigo-600 hover:bg-indigo-50 hover:border-indigo-300 transition-all"
+                      className="btn btn-sm btn-ghost w-full text-xs border border-white/30 text-white hover:bg-white/10 hover:border-white/50 transition-all"
                       onClick={() => router.push('/dashboard')}
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -866,6 +975,167 @@ export default function GamePage() {
           </div>
         </div>
       </main>
+
+      {/* Modal d'invitation */}
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-gray-900 to-black border-2 border-white/20 rounded-xl shadow-2xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white text-xl font-bold flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  </svg>
+                  Inviter un joueur
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowInviteModal(false);
+                    setSearchQuery('');
+                    setSearchResults([]);
+                  }}
+                  className="text-white/60 hover:text-white transition-all"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="form-control mb-4">
+                <input
+                  type="text"
+                  placeholder="Rechercher par nom d'utilisateur..."
+                  className="input bg-white/10 border-white/20 text-white placeholder-white/40 focus:border-white/50 focus:outline-none focus:ring-2 focus:ring-white/50"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    handleSearchUsers(e.target.value);
+                  }}
+                />
+              </div>
+
+              <div className="max-h-64 overflow-y-auto space-y-2">
+                {searching ? (
+                  <div className="text-center py-4">
+                    <span className="loading loading-spinner loading-sm text-white"></span>
+                  </div>
+                ) : searchResults.length === 0 && searchQuery.length >= 2 ? (
+                  <div className="text-center py-4">
+                    <p className="text-white/60 text-sm">Aucun utilisateur trouvé</p>
+                  </div>
+                ) : searchResults.length > 0 ? (
+                  searchResults.map((userResult) => (
+                    <div
+                      key={userResult.id}
+                      className="p-3 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-all"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="text-white font-semibold text-sm">{userResult.prenom} {userResult.nom}</p>
+                            <p className="text-white/60 text-xs">@{userResult.username}</p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => handleInviteUser(userResult.username)}
+                          disabled={inviting === userResult.username}
+                          className="btn btn-sm bg-white hover:bg-gray-200 text-black border-0"
+                        >
+                          {inviting === userResult.username ? (
+                            <span className="loading loading-spinner loading-xs"></span>
+                          ) : (
+                            'Inviter'
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-4">
+                    <p className="text-white/60 text-sm">Tapez au moins 2 caractères pour rechercher</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'abandon */}
+      {showAbandonModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-gradient-to-br from-gray-900 to-black border-2 border-white/20 rounded-xl shadow-2xl w-full max-w-md">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white text-xl font-bold flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  Abandonner la partie
+                </h3>
+                <button
+                  onClick={() => setShowAbandonModal(false)}
+                  disabled={abandoning}
+                  className="text-white/60 hover:text-white transition-all disabled:opacity-50"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="mb-6">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-br from-white/20 to-black/40 flex items-center justify-center border-2 border-white/30">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </div>
+                <p className="text-white text-center text-lg font-semibold mb-2">
+                  Êtes-vous sûr de vouloir abandonner ?
+                </p>
+                <p className="text-white/70 text-center text-sm">
+                  Cette action mettra fin à la partie et votre adversaire remportera la victoire.
+                </p>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowAbandonModal(false)}
+                  disabled={abandoning}
+                  className="flex-1 btn bg-white/10 hover:bg-white/20 text-white border border-white/20 hover:border-white/30 transition-all disabled:opacity-50"
+                >
+                  Annuler
+                </button>
+                <button
+                  onClick={confirmAbandon}
+                  disabled={abandoning}
+                  className="flex-1 btn bg-white hover:bg-gray-200 text-black border-0 shadow-lg shadow-black/30 hover:shadow-xl transition-all disabled:opacity-50"
+                >
+                  {abandoning ? (
+                    <>
+                      <span className="loading loading-spinner loading-sm"></span>
+                      Abandon...
+                    </>
+                  ) : (
+                    <>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                      Confirmer l&apos;abandon
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

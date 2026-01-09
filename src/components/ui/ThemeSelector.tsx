@@ -1,89 +1,31 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-
-const THEMES = [
-    { name: 'light', label: 'Clair', icon: '☀️' },
-    { name: 'dark', label: 'Sombre', icon: '🌙' },
-    { name: 'cupcake', label: 'Cupcake', icon: '🧁' },
-    { name: 'bumblebee', label: 'Abeille', icon: '🐝' },
-    { name: 'emerald', label: 'Émeraude', icon: '💎' },
-    { name: 'corporate', label: 'Corporate', icon: '💼' },
-    { name: 'synthwave', label: 'Synthwave', icon: '🌆' },
-    { name: 'retro', label: 'Rétro', icon: '📻' },
-    { name: 'cyberpunk', label: 'Cyberpunk', icon: '🤖' },
-    { name: 'valentine', label: 'Valentine', icon: '💝' },
-    { name: 'halloween', label: 'Halloween', icon: '🎃' },
-    { name: 'garden', label: 'Jardin', icon: '🌸' },
-    { name: 'forest', label: 'Forêt', icon: '🌲' },
-    { name: 'aqua', label: 'Aqua', icon: '🌊' },
-    { name: 'lofi', label: 'Lo-Fi', icon: '🎧' },
-    { name: 'pastel', label: 'Pastel', icon: '🎨' },
-    { name: 'fantasy', label: 'Fantasy', icon: '🧚' },
-    { name: 'wireframe', label: 'Wireframe', icon: '📐' },
-    { name: 'black', label: 'Noir', icon: '⚫' },
-    { name: 'luxury', label: 'Luxe', icon: '👑' },
-    { name: 'dracula', label: 'Dracula', icon: '🧛' },
-];
+import { useTheme } from '@/contexts/ThemeContext';
 
 export default function ThemeSelector() {
-    const [currentTheme, setCurrentTheme] = useState('light');
-    const [isOpen, setIsOpen] = useState(false);
-
-    useEffect(() => {
-        const storedTheme = localStorage.getItem('theme') || 'light';
-        setCurrentTheme(storedTheme);
-        document.documentElement.setAttribute('data-theme', storedTheme);
-    }, []);
-
-    const handleThemeChange = (themeName: string) => {
-        setCurrentTheme(themeName);
-        localStorage.setItem('theme', themeName);
-        document.documentElement.setAttribute('data-theme', themeName);
-        setIsOpen(false);
-    };
-
-    const currentThemeData = THEMES.find(t => t.name === currentTheme) || THEMES[0];
+    const { theme, toggleTheme } = useTheme();
 
     return (
-        <div className="dropdown dropdown-top lg:dropdown-top">
-            <div
-                tabIndex={0}
-                role="button"
-                className="btn btn-ghost w-full justify-start lg:justify-center"
-                onClick={() => setIsOpen(!isOpen)}
-            >
-                <span className="text-xl">{currentThemeData.icon}</span>
-                <span className="hidden lg:inline ml-2 text-sm">{currentThemeData.label}</span>
-            </div>
-            {isOpen && (
-                <ul
-                    tabIndex={0}
-                    className="dropdown-content mb-2 z-[1] p-2 shadow-2xl bg-base-300 rounded-box w-52 max-h-96 overflow-y-auto"
-                >
-                    <li className="menu-title">
-                        <span>Choisir un thème</span>
-                    </li>
-                    {THEMES.map((theme) => (
-                        <li key={theme.name}>
-                            <button
-                                onClick={() => handleThemeChange(theme.name)}
-                                className={`flex items-center gap-2 ${currentTheme === theme.name ? 'active bg-primary text-primary-content' : ''}`}
-                            >
-                                <span className="text-xl">{theme.icon}</span>
-                                <span>{theme.label}</span>
-                                {currentTheme === theme.name && (
-                                    <span className="ml-auto">✓</span>
-                                )}
-                            </button>
-                        </li>
-                    ))}
-                </ul>
+        <button
+            onClick={toggleTheme}
+            className="btn btn-ghost w-full justify-start lg:justify-center hover:bg-white/10 transition-all"
+            title={theme === 'light' ? 'Passer au thème sombre' : 'Passer au thème clair'}
+        >
+            {theme === 'light' ? (
+                <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                    <span className="hidden lg:inline ml-2 text-sm">Sombre</span>
+                </>
+            ) : (
+                <>
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <span className="hidden lg:inline ml-2 text-sm">Clair</span>
+                </>
             )}
-        </div>
+        </button>
     );
 }
-
-
-
-

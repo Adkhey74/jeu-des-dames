@@ -23,10 +23,12 @@ model User {
   updatedAt         DateTime @updatedAt
 
   // Relations
-  gamesAsWhite Game[]        @relation("WhitePlayer")
-  gamesAsBlack Game[]        @relation("BlackPlayer")
-  stats        PlayerStats?
-  history      GameHistory[]
+  gamesAsWhite    Game[]            @relation("WhitePlayer")
+  gamesAsBlack    Game[]            @relation("BlackPlayer")
+  stats           PlayerStats?
+  history         GameHistory[]
+  invitationsSent GameInvitation[]  @relation("Inviter")
+  invitationsReceived GameInvitation[] @relation("Invitee")
 
   @@map("users")
 }
@@ -46,9 +48,10 @@ model Game {
   finishedAt     DateTime?
 
   // Relations
-  whitePlayer User         @relation("WhitePlayer", fields: [whitePlayerId], references: [id])
-  blackPlayer User?        @relation("BlackPlayer", fields: [blackPlayerId], references: [id])
+  whitePlayer User            @relation("WhitePlayer", fields: [whitePlayerId], references: [id])
+  blackPlayer User?           @relation("BlackPlayer", fields: [blackPlayerId], references: [id])
   history     GameHistory?
+  invitations GameInvitation[]
 
   @@map("games")
 }
@@ -81,4 +84,22 @@ model PlayerStats {
   user User @relation(fields: [userId], references: [id])
 
   @@map("player_stats")
+}
+
+model GameInvitation {
+  id        String   @id @default(uuid())
+  gameId    String
+  inviterId String
+  inviteeId String
+  status    String   @default("pending") // pending, accepted, declined, expired
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  game    Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  inviter User @relation("Inviter", fields: [inviterId], references: [id])
+  invitee User @relation("Invitee", fields: [inviteeId], references: [id])
+
+  @@unique([gameId, inviteeId])
+  @@map("game_invitations")
 }

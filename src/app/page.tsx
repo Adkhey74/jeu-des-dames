@@ -13,10 +13,10 @@ export default function Home() {
           <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wNSI+PGNpcmNsZSBjeD0iMzAiIGN5PSIzMCIgcj0iMiIvPjwvZz48L2c+PC9zdmc+')] opacity-10"></div>
           <div className="hero-content text-center relative z-10">
             <div className="max-w-2xl">
-              <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-red-500/20 backdrop-blur-sm mb-6 shadow-2xl border border-red-500/30">
+              <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm mb-6 shadow-2xl border border-white/30">
                 <span className="text-5xl">🎲</span>
               </div>
-              <h1 className="text-6xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-red-400 via-red-500 to-orange-500 bg-clip-text text-transparent">
+              <h1 className="text-6xl md:text-7xl font-bold mb-6 text-white">
                 Jeu de Dames
               </h1>
               <p className="py-6 text-xl text-white/90 leading-relaxed max-w-xl mx-auto">
@@ -25,7 +25,7 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
                 <Link 
                   href="/register" 
-                  className="btn bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white border-0 shadow-xl shadow-red-500/30 hover:shadow-2xl hover:shadow-red-500/40 transform hover:scale-105 transition-all text-lg px-8 py-3 font-semibold"
+                  className="btn bg-white text-black border-0 hover:bg-gray-200 shadow-xl shadow-black/30 hover:shadow-2xl hover:shadow-black/40 transform hover:scale-105 transition-all text-lg px-8 py-3 font-semibold"
                 >
                   Commencer à jouer
                 </Link>
@@ -44,7 +44,7 @@ export default function Home() {
         <div className="py-20 px-4 bg-gradient-gaming">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-red-400 via-red-500 to-orange-500 bg-clip-text text-transparent">
+              <h2 className="text-4xl md:text-5xl font-bold mb-4 text-white">
                 Fonctionnalités
               </h2>
               <p className="text-lg text-white/70 max-w-2xl mx-auto">
@@ -54,7 +54,7 @@ export default function Home() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="gaming-card rounded-2xl overflow-hidden">
                 <div className="p-8 items-center text-center">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center mb-6 shadow-lg mx-auto">
+                  <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mb-6 shadow-lg mx-auto border border-white/30">
                     <span className="text-4xl">🎮</span>
                   </div>
                   <h3 className="text-white text-xl mb-3 font-bold">Créer une partie</h3>
@@ -64,7 +64,7 @@ export default function Home() {
 
               <div className="gaming-card rounded-2xl overflow-hidden">
                 <div className="p-8 items-center text-center">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-500 to-orange-700 flex items-center justify-center mb-6 shadow-lg mx-auto">
+                  <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mb-6 shadow-lg mx-auto border border-white/30">
                     <span className="text-4xl">🔗</span>
                   </div>
                   <h3 className="text-white text-xl mb-3 font-bold">Rejoindre une partie</h3>
@@ -74,7 +74,7 @@ export default function Home() {
 
               <div className="gaming-card rounded-2xl overflow-hidden">
                 <div className="p-8 items-center text-center">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center mb-6 shadow-lg mx-auto">
+                  <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center mb-6 shadow-lg mx-auto border border-white/30">
                     <span className="text-4xl">🏆</span>
                   </div>
                   <h3 className="text-white text-xl mb-3 font-bold">Suivre vos scores</h3>
@@ -88,18 +88,18 @@ export default function Home() {
         {/* How to Play Section */}
         <div className="py-20 px-4 bg-gradient-gaming">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-red-400 via-red-500 to-orange-500 bg-clip-text text-transparent">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4 text-white">
               Comment jouer ?
             </h2>
             <p className="text-lg text-white/70 mb-12">C&apos;est simple, suivez ces étapes</p>
             <div className="steps steps-vertical lg:steps-horizontal w-full">
-              <div className="step step-primary text-red-500">
+              <div className="step step-primary text-white">
                 <div className="step-content">
                   <div className="font-semibold text-lg text-white">Créez un compte</div>
                   <div className="text-sm text-white/60 mt-1">Inscription gratuite et rapide</div>
                 </div>
               </div>
-              <div className="step step-primary text-red-500">
+              <div className="step step-primary text-white">
                 <div className="step-content">
                   <div className="font-semibold text-lg text-white">Créez ou rejoignez</div>
                   <div className="text-sm text-white/60 mt-1">Une partie en un clic</div>
