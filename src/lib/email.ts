@@ -15,17 +15,10 @@ function getApiInstance(): brevo.TransactionalEmailsApi {
     const apiInstance = new brevo.TransactionalEmailsApi();
     
     // Configurer l'API key
-    if (typeof apiInstance.setApiKey === 'function') {
-        apiInstance.setApiKey(
-            brevo.TransactionalEmailsApiApiKeys.apiKey,
-            BREVO_API_KEY
-        );
-    } else {
-        // Méthode alternative si setApiKey n'existe pas
-        apiInstance.setDefaultAuthentication({
-            apiKey: BREVO_API_KEY
-        } as { apiKey: string });
-    }
+    apiInstance.setApiKey(
+        brevo.TransactionalEmailsApiApiKeys.apiKey,
+        BREVO_API_KEY
+    );
     
     return apiInstance;
 }
